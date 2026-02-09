@@ -335,49 +335,22 @@ function IngestModal({ onClose }: { onClose: () => void }) {
             }}
           >
             <span>Privacy Level</span>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                border: "1px solid var(--card-border)",
-                borderRadius: "8px",
-                padding: "4px",
-              }}
-            >
+            <div className="privacy-toggle">
               <button
                 type="button"
                 onClick={() => setPrivacyLevel("PRIVATE")}
-                style={{
-                  background:
-                    privacyLevel === "PRIVATE"
-                      ? "var(--primary-color)"
-                      : "transparent",
-                  color:
-                    privacyLevel === "PRIVATE" ? "white" : "var(--text-main)",
-                  border: "none",
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
+                className={`toggle-btn ${
+                  privacyLevel === "PRIVATE" ? "active" : ""
+                }`}
               >
                 Private
               </button>
               <button
                 type="button"
                 onClick={() => setPrivacyLevel("PUBLIC")}
-                style={{
-                  background:
-                    privacyLevel === "PUBLIC"
-                      ? "var(--primary-color)"
-                      : "transparent",
-                  color:
-                    privacyLevel === "PUBLIC" ? "white" : "var(--text-main)",
-                  border: "none",
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
+                className={`toggle-btn ${
+                  privacyLevel === "PUBLIC" ? "active" : ""
+                }`}
               >
                 Public
               </button>
