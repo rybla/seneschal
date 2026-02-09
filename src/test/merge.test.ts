@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { app } from "../server";
-import { createEntity, getAllEntities, mergeEntities, createRelation } from "../db/query";
+import { hc } from "hono/client";
+import { createEntity, createRelation, getAllEntities, mergeEntities } from "../db/query";
+import { app, type AppType } from "../server";
+
+const client = hc<AppType>("http://localhost", { fetch: (input: RequestInfo | URL, init?: RequestInit) => app.request(input, init) })
 
 describe("Node Merging Workflow", () => {
     // Setup: We need to ensure the DB is in a clean state or use a test DB.
@@ -54,10 +57,7 @@ describe("Node Merging Workflow", () => {
         const e2 = await createTestEntity(name, "TEST_DUP"); // Exact same name should match
 
         // helper to hit the API
-        const req = new Request("http://localhost/api/merge-nodes", {
-            method: "POST",
-        });
-        const res = await app.fetch(req);
+        const res = await client.api["merge-nodes"].$post();
         expect(res.status).toBe(200);
 
         const body = (await res.json()) as { success: boolean, mergedPairs: Array<{ winner: string, loser: string }> };
