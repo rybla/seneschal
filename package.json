@@ -14,6 +14,7 @@
     "pdf-parse": "^2.4.5",
     "react": "^19",
     "react-dom": "^19",
+    "react-force-graph-2d": "^1.29.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

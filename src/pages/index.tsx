@@ -1,5 +1,6 @@
-import React, { useState, useEffect, type FormEvent } from "react";
+import React, { useState, useEffect, type FormEvent, useCallback } from "react";
 import { createRoot } from "react-dom/client";
+import ForceGraph2D from "react-force-graph-2d";
 import {
   fetchDocuments,
   fetchEntities,
@@ -15,6 +16,7 @@ import type {
   Relation,
   QueryResponse,
   PrivacyLevel,
+  GraphNode,
 } from "./types";
 
 // --- Components ---
@@ -71,11 +73,48 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 // --- Sections ---
 
+// Extend GraphNode to include properties added by react-force-graph-2d
+interface ForceGraphNode extends GraphNode {
+  x?: number;
+  y?: number;
+}
+
 function SearchSection() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<QueryResponse | null>(null);
   const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>("PRIVATE");
+
+  useEffect(() => {
+    // Fetch the initial graph data when the component mounts
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        const [entities, relations] = await Promise.all([
+          fetchEntities(),
+          fetchRelations(),
+        ]);
+        const graphData = {
+          nodes: entities,
+          edges: relations.map((r) => ({
+            ...r,
+            source: r.sourceEntityId,
+            target: r.targetEntityId,
+          })),
+        };
+        setData({
+          graphData,
+          answer: "Showing the full knowledge graph.",
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load initial graph: " + err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -91,6 +130,41 @@ function SearchSection() {
       setLoading(false);
     }
   };
+
+  const nodeCanvasObject = useCallback(
+    (
+      node: ForceGraphNode,
+      ctx: CanvasRenderingContext2D,
+      globalScale: number,
+    ) => {
+      const label = node.name;
+      const fontSize = 12 / globalScale;
+      ctx.font = `${fontSize}px Sans-Serif`;
+      const textWidth = ctx.measureText(label).width;
+      const bckgDimensions: [number, number] = [
+        textWidth + fontSize * 0.2,
+        fontSize + fontSize * 0.2,
+      ]; // some padding
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0)"; // transparent background
+      ctx.fillRect(
+        (node.x ?? 0) - bckgDimensions[0] / 2,
+        (node.y ?? 0) - bckgDimensions[1] / 2,
+        ...bckgDimensions,
+      );
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "var(--text-main)";
+      ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + 10);
+
+      ctx.beginPath();
+      ctx.arc(node.x ?? 0, node.y ?? 0, 4, 0, 2 * Math.PI, false);
+      ctx.fillStyle = "rgba(99, 102, 241, 0.5)";
+      ctx.fill();
+    },
+    [],
+  );
 
   return (
     <section>
@@ -163,40 +237,20 @@ function SearchSection() {
               <p>No results found for your query.</p>
             </div>
           ) : (
-            <div
-              style={{
-                padding: "1rem",
-                width: "100%",
-                height: "100%",
-                overflow: "auto",
+            <ForceGraph2D
+              graphData={{
+                nodes: data.graphData.nodes,
+                links: data.graphData.edges,
               }}
-            >
-              <h4 style={{ marginBottom: "1rem" }}>
-                Found {data.graphData.nodes.length} Nodes,{" "}
-                {data.graphData.edges.length} Edges
-              </h4>
-              <ul className="data-list">
-                {data.graphData.nodes.map((node) => (
-                  <li key={node.id} className="list-item">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <strong>{node.name}</strong>
-                      <Badge>{node.type}</Badge>
-                    </div>
-                    {node.description && (
-                      <span style={{ marginTop: "0.5rem" }}>
-                        {node.description}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              nodeLabel={(node) => `${node.name} (${node.type})`}
+              linkLabel={(link) => link.type}
+              backgroundColor="var(--background)"
+              linkColor={() => "rgba(128, 128, 128, 0.5)"}
+              linkDirectionalArrowLength={3.5}
+              linkDirectionalArrowRelPos={1}
+              nodeCanvasObject={nodeCanvasObject}
+              height={500}
+            />
           )}
         </Card>
       ) : (
