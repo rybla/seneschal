@@ -1,10 +1,10 @@
 import { toJsonSchema } from "@/utility";
 import { LinkupClient } from "linkup-sdk";
 import z from "zod";
-import env from './env';
+import env from "./env";
 
 const client = new LinkupClient({
-    apiKey: env.LINKUP_API_KEY,
+  apiKey: env.LINKUP_API_KEY,
 });
 
 // const CompanyRevenueSchema = {
@@ -27,17 +27,38 @@ const client = new LinkupClient({
 
 export type CompanyRevenue = z.infer<typeof CompanyRevenueSchema>;
 export const CompanyRevenueSchema = z.object({
-    companyName: z.string(),
-    revenueAmount: z.number(),
-    fiscalYear: z.string()
+  companyName: z.string(),
+  revenueAmount: z.number(),
+  fiscalYear: z.string(),
 });
 
-export async function searchCompanyRevenue(companyName: string, year: string): Promise<CompanyRevenue> {
-    const response = await client.search({
-        query: `What is ${companyName}'s ${year} revenue?`,
-        depth: "standard",
-        outputType: 'structured',
-        structuredOutputSchema: toJsonSchema(CompanyRevenueSchema)
-    });
-    return CompanyRevenueSchema.parse(response);
-};
+export const CompanyHeadquartersSchema = z.object({
+  companyName: z.string(),
+  headquartersLocation: z.string(),
+});
+export type CompanyHeadquarters = z.infer<typeof CompanyHeadquartersSchema>;
+
+export async function findCompanyHeadquarters(
+  companyName: string,
+): Promise<CompanyHeadquarters> {
+  const response = await client.search({
+    query: `What is the headquarters location of ${companyName}?`,
+    depth: "standard",
+    outputType: "structured",
+    structuredOutputSchema: toJsonSchema(CompanyHeadquartersSchema),
+  });
+  return CompanyHeadquartersSchema.parse(response);
+}
+
+export async function searchCompanyRevenue(
+  companyName: string,
+  year: string,
+): Promise<CompanyRevenue> {
+  const response = await client.search({
+    query: `What is ${companyName}'s ${year} revenue?`,
+    depth: "standard",
+    outputType: "structured",
+    structuredOutputSchema: toJsonSchema(CompanyRevenueSchema),
+  });
+  return CompanyRevenueSchema.parse(response);
+}

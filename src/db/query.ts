@@ -4,18 +4,18 @@
 
 import db from "@/db";
 import {
-    documentsTable,
-    entitiesTable,
-    type DocumentMetadataByType,
-    type InsertDocument,
-    type InsertEntity,
-    type InsertRelation,
-    relationsTable,
-    type SelectDocument,
-    type SelectEntity,
-    type SelectRelation,
+  documentsTable,
+  entitiesTable,
+  type DocumentMetadataByType,
+  type InsertDocument,
+  type InsertEntity,
+  type InsertRelation,
+  relationsTable,
+  type SelectDocument,
+  type SelectEntity,
+  type SelectRelation,
 } from "@/db/schema";
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or, notInArray, and } from "drizzle-orm";
 import type { GraphData, Node, Edge } from "@/types";
 
 /**
@@ -23,10 +23,12 @@ import type { GraphData, Node, Edge } from "@/types";
  * @param data The document data to insert.
  * @returns The created document.
  */
-export async function createDocument(data: InsertDocument): Promise<SelectDocument> {
-    const [document] = await db.insert(documentsTable).values(data).returning();
-    if (!document) throw new Error("Failed to create document");
-    return document;
+export async function createDocument(
+  data: InsertDocument,
+): Promise<SelectDocument> {
+  const [document] = await db.insert(documentsTable).values(data).returning();
+  if (!document) throw new Error("Failed to create document");
+  return document;
 }
 
 /**
@@ -34,30 +36,32 @@ export async function createDocument(data: InsertDocument): Promise<SelectDocume
  * @param path The absolute path to the document.
  * @returns The document if found, otherwise undefined.
  */
-export async function getDocumentByPath(path: string): Promise<SelectDocument | undefined> {
-    const document = await db.query.documentsTable.findFirst({
-        where: eq(documentsTable.path, path),
-    });
-    return document;
+export async function getDocumentByPath(
+  path: string,
+): Promise<SelectDocument | undefined> {
+  const document = await db.query.documentsTable.findFirst({
+    where: eq(documentsTable.path, path),
+  });
+  return document;
 }
 
 /**
  * Updates a document's metadata (and optionally other fields). Used after extracting type-specific structured metadata during ingestion.
  */
 export async function updateDocument(
-    documentId: number,
-    updates: { metadata?: DocumentMetadataByType; lastIndexedAt?: Date }
+  documentId: number,
+  updates: { metadata?: DocumentMetadataByType; lastIndexedAt?: Date },
 ): Promise<SelectDocument> {
-    const [doc] = await db
-        .update(documentsTable)
-        .set({
-            ...updates,
-            updatedAt: new Date(),
-        })
-        .where(eq(documentsTable.id, documentId))
-        .returning();
-    if (!doc) throw new Error("Failed to update document");
-    return doc;
+  const [doc] = await db
+    .update(documentsTable)
+    .set({
+      ...updates,
+      updatedAt: new Date(),
+    })
+    .where(eq(documentsTable.id, documentId))
+    .returning();
+  if (!doc) throw new Error("Failed to update document");
+  return doc;
 }
 
 /**
@@ -66,9 +70,9 @@ export async function updateDocument(
  * @returns The created entity.
  */
 export async function createEntity(data: InsertEntity): Promise<SelectEntity> {
-    const [entity] = await db.insert(entitiesTable).values(data).returning();
-    if (!entity) throw new Error("Failed to create entity");
-    return entity;
+  const [entity] = await db.insert(entitiesTable).values(data).returning();
+  if (!entity) throw new Error("Failed to create entity");
+  return entity;
 }
 
 /**
@@ -76,10 +80,12 @@ export async function createEntity(data: InsertEntity): Promise<SelectEntity> {
  * @param data The relation data to insert.
  * @returns The created relation.
  */
-export async function createRelation(data: InsertRelation): Promise<SelectRelation> {
-    const [relation] = await db.insert(relationsTable).values(data).returning();
-    if (!relation) throw new Error("Failed to create relation");
-    return relation;
+export async function createRelation(
+  data: InsertRelation,
+): Promise<SelectRelation> {
+  const [relation] = await db.insert(relationsTable).values(data).returning();
+  if (!relation) throw new Error("Failed to create relation");
+  return relation;
 }
 
 /**
@@ -87,7 +93,7 @@ export async function createRelation(data: InsertRelation): Promise<SelectRelati
  * @returns An array of all entities.
  */
 export async function getAllEntities(): Promise<SelectEntity[]> {
-    return db.select().from(entitiesTable);
+  return db.select().from(entitiesTable);
 }
 
 /**
@@ -95,7 +101,7 @@ export async function getAllEntities(): Promise<SelectEntity[]> {
  * @returns An array of all documents.
  */
 export async function getAllDocuments(): Promise<SelectDocument[]> {
-    return db.select().from(documentsTable);
+  return db.select().from(documentsTable);
 }
 
 /**
@@ -103,7 +109,7 @@ export async function getAllDocuments(): Promise<SelectDocument[]> {
  * @returns An array of all relations.
  */
 export async function getAllRelations(): Promise<SelectRelation[]> {
-    return db.select().from(relationsTable);
+  return db.select().from(relationsTable);
 }
 
 /**
@@ -111,19 +117,24 @@ export async function getAllRelations(): Promise<SelectRelation[]> {
  * @param winnerId The ID of the entity to keep.
  * @param loserId The ID of the entity to merge into the winner and delete.
  */
-export async function mergeEntities(winnerId: number, loserId: number): Promise<void> {
-    // 1. Update relations where the loser is the source
-    await db.update(relationsTable)
-        .set({ sourceEntityId: winnerId })
-        .where(eq(relationsTable.sourceEntityId, loserId));
+export async function mergeEntities(
+  winnerId: number,
+  loserId: number,
+): Promise<void> {
+  // 1. Update relations where the loser is the source
+  await db
+    .update(relationsTable)
+    .set({ sourceEntityId: winnerId })
+    .where(eq(relationsTable.sourceEntityId, loserId));
 
-    // 2. Update relations where the loser is the target
-    await db.update(relationsTable)
-        .set({ targetEntityId: winnerId })
-        .where(eq(relationsTable.targetEntityId, loserId));
+  // 2. Update relations where the loser is the target
+  await db
+    .update(relationsTable)
+    .set({ targetEntityId: winnerId })
+    .where(eq(relationsTable.targetEntityId, loserId));
 
-    // 3. Delete the loser entity
-    await db.delete(entitiesTable).where(eq(entitiesTable.id, loserId));
+  // 3. Delete the loser entity
+  await db.delete(entitiesTable).where(eq(entitiesTable.id, loserId));
 }
 
 /**
@@ -132,84 +143,121 @@ export async function mergeEntities(winnerId: number, loserId: number): Promise<
  * @param depth The depth of traversal (default 1).
  * @returns The graph data comprising relevant nodes and edges.
  */
-export async function getGraphContext(startEntityIds: number[], depth: number = 1): Promise<GraphData> {
-    const visitedNodeIds = new Set<number>(startEntityIds);
-    const nodesMap = new Map<number, Node>();
-    const edgesMap = new Map<number, Edge>();
+export async function getGraphContext(
+  startEntityIds: number[],
+  depth: number = 1,
+): Promise<GraphData> {
+  const visitedNodeIds = new Set<number>(startEntityIds);
+  const nodesMap = new Map<number, Node>();
+  const edgesMap = new Map<number, Edge>();
 
-    let currentLevelIds = [...startEntityIds];
+  let currentLevelIds = [...startEntityIds];
 
-    // First, get the initial nodes
-    if (startEntityIds.length > 0) {
-        const initialNodes = await db.select().from(entitiesTable).where(inArray(entitiesTable.id, startEntityIds));
-        for (const node of initialNodes) {
-            nodesMap.set(node.id, {
-                id: node.id,
-                name: node.name,
-                type: node.type,
-                description: node.description,
-                metadata: node.metadata,
-            });
-        }
+  // First, get the initial nodes
+  if (startEntityIds.length > 0) {
+    const initialNodes = await db
+      .select()
+      .from(entitiesTable)
+      .where(inArray(entitiesTable.id, startEntityIds));
+    for (const node of initialNodes) {
+      nodesMap.set(node.id, {
+        id: node.id,
+        name: node.name,
+        type: node.type,
+        description: node.description,
+        metadata: node.metadata,
+      });
+    }
+  }
+
+  for (let d = 0; d < depth; d++) {
+    if (currentLevelIds.length === 0) break;
+
+    // Find all edges connected to current level nodes
+    const relevantRelations = await db
+      .select()
+      .from(relationsTable)
+      .where(
+        or(
+          inArray(relationsTable.sourceEntityId, currentLevelIds),
+          inArray(relationsTable.targetEntityId, currentLevelIds),
+        ),
+      );
+
+    const nextLevelIds: number[] = [];
+
+    for (const rel of relevantRelations) {
+      edgesMap.set(rel.id, {
+        id: rel.id,
+        source: rel.sourceEntityId,
+        target: rel.targetEntityId,
+        type: rel.type,
+        description: rel.description,
+        properties: rel.properties,
+      });
+
+      // Identify neighbors
+      // Check both ends. If not visited, add to next level.
+      if (!visitedNodeIds.has(rel.sourceEntityId)) {
+        visitedNodeIds.add(rel.sourceEntityId);
+        nextLevelIds.push(rel.sourceEntityId);
+      }
+      if (!visitedNodeIds.has(rel.targetEntityId)) {
+        visitedNodeIds.add(rel.targetEntityId);
+        nextLevelIds.push(rel.targetEntityId);
+      }
     }
 
-    for (let d = 0; d < depth; d++) {
-        if (currentLevelIds.length === 0) break;
-
-        // Find all edges connected to current level nodes
-        const relevantRelations = await db.select().from(relationsTable).where(
-            or(
-                inArray(relationsTable.sourceEntityId, currentLevelIds),
-                inArray(relationsTable.targetEntityId, currentLevelIds)
-            )
-        );
-
-        const nextLevelIds: number[] = [];
-
-        for (const rel of relevantRelations) {
-            edgesMap.set(rel.id, {
-                id: rel.id,
-                source: rel.sourceEntityId,
-                target: rel.targetEntityId,
-                type: rel.type,
-                description: rel.description,
-                properties: rel.properties,
-            });
-
-            // Identify neighbors
-            // Check both ends. If not visited, add to next level.
-            if (!visitedNodeIds.has(rel.sourceEntityId)) {
-                visitedNodeIds.add(rel.sourceEntityId);
-                nextLevelIds.push(rel.sourceEntityId);
-            }
-            if (!visitedNodeIds.has(rel.targetEntityId)) {
-                visitedNodeIds.add(rel.targetEntityId);
-                nextLevelIds.push(rel.targetEntityId);
-            }
-        }
-
-        if (nextLevelIds.length > 0) {
-            // Fetch the node details for the new neighbors
-            const newNodes = await db.select().from(entitiesTable).where(inArray(entitiesTable.id, nextLevelIds));
-            for (const node of newNodes) {
-                nodesMap.set(node.id, {
-                    id: node.id,
-                    name: node.name,
-                    type: node.type,
-                    description: node.description,
-                    metadata: node.metadata,
-                });
-            }
-            currentLevelIds = nextLevelIds;
-        } else {
-            break;
-        }
+    if (nextLevelIds.length > 0) {
+      // Fetch the node details for the new neighbors
+      const newNodes = await db
+        .select()
+        .from(entitiesTable)
+        .where(inArray(entitiesTable.id, nextLevelIds));
+      for (const node of newNodes) {
+        nodesMap.set(node.id, {
+          id: node.id,
+          name: node.name,
+          type: node.type,
+          description: node.description,
+          metadata: node.metadata,
+        });
+      }
+      currentLevelIds = nextLevelIds;
+    } else {
+      break;
     }
+  }
 
-    return {
-        nodes: Array.from(nodesMap.values()),
-        edges: Array.from(edgesMap.values()),
-    };
+  return {
+    nodes: Array.from(nodesMap.values()),
+    edges: Array.from(edgesMap.values()),
+  };
+}
+
+/**
+ * Finds companies that do not have a headquarters relation.
+ * @returns An array of company entities without headquarters.
+ */
+export async function findCompaniesWithoutHeadquarters(): Promise<
+  SelectEntity[]
+> {
+  // Subquery to find all company IDs that have a headquarters
+  const companiesWithHeadquarters = db
+    .select({ id: relationsTable.sourceEntityId })
+    .from(relationsTable)
+    .where(eq(relationsTable.type, "HAS_HEADQUARTERS"));
+
+  // Find all companies whose IDs are not in the subquery result
+  return db
+    .select()
+    .from(entitiesTable)
+    .where(
+      and(
+        eq(entitiesTable.type, "COMPANY"),
+        notInArray(entitiesTable.id, companiesWithHeadquarters),
+      ),
+    );
 }
 
 /**
@@ -217,14 +265,19 @@ export async function getGraphContext(startEntityIds: number[], depth: number = 
  * @param names List of entity names to search for.
  * @returns Array of matching entities.
  */
-export async function findEntitiesByNames(names: string[]): Promise<SelectEntity[]> {
-    if (names.length === 0) return [];
+export async function findEntitiesByNames(
+  names: string[],
+): Promise<SelectEntity[]> {
+  if (names.length === 0) return [];
 
-    // We can also try case-insensitive or partial matching if needed, 
-    // but for now let's do exact match on the list.
-    // If the names are not exact, this returns empty. 
-    // The ExtractQueryEntities from Gemini should arguably be "fuzzy" or we should use ILIKE.
-    // SQLite: valid for case-insensitive if collation is set or use sql operator.
-    // For simplicity: IN array.
-    return db.select().from(entitiesTable).where(inArray(entitiesTable.name, names));
+  // We can also try case-insensitive or partial matching if needed,
+  // but for now let's do exact match on the list.
+  // If the names are not exact, this returns empty.
+  // The ExtractQueryEntities from Gemini should arguably be "fuzzy" or we should use ILIKE.
+  // SQLite: valid for case-insensitive if collation is set or use sql operator.
+  // For simplicity: IN array.
+  return db
+    .select()
+    .from(entitiesTable)
+    .where(inArray(entitiesTable.name, names));
 }
