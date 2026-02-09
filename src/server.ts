@@ -1,27 +1,16 @@
-import { type DocumentType } from "@/db/schema";
-import { findCompanyHeadquarters } from "@/linkup";
+import { searchLinkup } from "@/linkup";
 import {
-  createDocument,
-  createEntity,
-  createRelation,
-  findCompaniesWithoutHeadquarters,
+  findCommonRelationPatterns,
   findEntitiesByNames,
+  findEntitiesWithMissingRelations,
   getAllDocuments,
   getAllEntities,
   getAllRelations,
-  getDocumentByPath,
   getGraphContext,
   mergeEntities,
-  updateDocument,
 } from "@/db/query";
 import env from "@/env";
-import {
-  classifyDocument,
-  extractEntitiesAndRelations,
-  extractQueryEntities,
-  extractStructuredMetadata,
-  synthesizeAnswerFromGraph,
-} from "@/llm";
+import { extractQueryEntities, synthesizeAnswerFromGraph } from "@/llm";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
 import { zValidator } from "@hono/zod-validator";
@@ -30,6 +19,8 @@ import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import z from "zod";
 import { logger } from "hono/logger";
+import { ingestText } from "./ingestion";
+import { generateLinkupQuery } from "./saturation";
 
 // -----------------------------------------------------------------------------
 
@@ -80,114 +71,10 @@ const routes = app
       }
 
       try {
-        const docPath = `${process.cwd()}/uploads/${file.name}`;
-
-        // Classify document
-        const documentType = await classifyDocument(textContent, privacyLevel);
-        console.log(`Classified document ${file.name} as ${documentType}`);
-
-        let document = await getDocumentByPath(docPath);
-
-        if (!document) {
-          document = await createDocument({
-            path: docPath,
-            title: file.name,
-            content: textContent,
-            type: documentType as DocumentType,
-            securityLevel: "standard",
-            privacyLevel,
-            metadata: {},
-          });
-        }
-
-        // Extract type-specific structured metadata for autonomous actions (Invoice Checker, Scope Checker, Non-compete Checker)
-        const structuredMetadata = await extractStructuredMetadata(
-          textContent,
-          documentType,
-          privacyLevel,
-        );
-        if (structuredMetadata && Object.keys(structuredMetadata).length > 0) {
-          await updateDocument(document.id, {
-            metadata: structuredMetadata,
-            lastIndexedAt: new Date(),
-          });
-        }
-
-        // Entity and relation extraction
-        // Real implementation would use an LLM here
-        // For now, we'll just create a dummy entity for the document itself if needed,
-        // but the design says "extract entities and relations".
-        // I'll add a simple entity based on the filename.
-
-        const entity = await createEntity({
-          name: file.name.replace(".pdf", ""),
-          type: documentType, // Use the classified type (e.g. INVOICE)
-          description: `Imported ${documentType} document`,
-          sourceDocumentId: document.id,
-          metadata: {},
-        });
-
-        // Process the document in chunks to extract entities and relations
-        const chunks = textContent.split(/\n\s*\n/); // Split by double newlines (paragraphs)
-        const createdEntitiesMap = new Map<string, number>(); // Name -> ID
-
-        // Add the document entity itself to the map
-        createdEntitiesMap.set(entity.name, entity.id);
-
-        for (const chunk of chunks) {
-          if (chunk.trim().length < 50) continue; // Skip very short chunks
-
-          const { entities, relations } = await extractEntitiesAndRelations(
-            chunk,
-            documentType,
-            privacyLevel,
-          );
-
-          // 1. Process Entities
-          for (const extractedEntity of entities) {
-            // Check if we've already created this entity in this transaction
-            if (createdEntitiesMap.has(extractedEntity.name)) continue;
-
-            // Check if it exists in the DB (global check could be expensive, but needed for linking)
-            // For this MVP, we might create duplicates and rely on the "merge" workflow later.
-            // However, let's try to verify if it exists by name to avoid obvious dupes.
-            const existing = await findEntitiesByNames([extractedEntity.name]);
-
-            if (existing.length > 0 && existing[0]) {
-              createdEntitiesMap.set(extractedEntity.name, existing[0].id);
-            } else {
-              const newEntity = await createEntity({
-                name: extractedEntity.name,
-                type: extractedEntity.type,
-                description: extractedEntity.description,
-                sourceDocumentId: document.id,
-                metadata: {},
-              });
-              createdEntitiesMap.set(extractedEntity.name, newEntity.id);
-            }
-          }
-
-          // 2. Process Relations
-          for (const relation of relations) {
-            const sourceId = createdEntitiesMap.get(relation.source);
-            const targetId = createdEntitiesMap.get(relation.target);
-
-            if (sourceId && targetId) {
-              await createRelation({
-                sourceEntityId: sourceId,
-                targetEntityId: targetId,
-                type: relation.type,
-                description: relation.description,
-                sourceDocumentId: document.id,
-                properties: {},
-              });
-            }
-          }
-        }
+        const document = await ingestText(textContent, "USER", privacyLevel);
         return c.json({
           success: true,
           documentId: document.id,
-          entityId: entity.id,
         });
       } catch (error) {
         console.error("Database error", error);
@@ -271,40 +158,39 @@ const routes = app
   })
   .on("POST", "/saturate-database", async (c) => {
     try {
-      const companies = await findCompaniesWithoutHeadquarters();
+      const patterns = await findCommonRelationPatterns();
+      const entitiesWithMissingRelations =
+        await findEntitiesWithMissingRelations(patterns);
       let saturatedCount = 0;
 
-      for (const company of companies) {
-        try {
-          const hq = await findCompanyHeadquarters(company.name);
+      for (const [
+        entity,
+        missingRelationTypes,
+      ] of entitiesWithMissingRelations.entries()) {
+        for (const relationType of missingRelationTypes) {
+          try {
+            const linkupQuery = generateLinkupQuery(entity, relationType);
+            if (!linkupQuery) continue;
 
-          // Check if a location entity already exists
-          const existingLocations = await findEntitiesByNames([
-            hq.headquartersLocation,
-          ]);
-          let locationEntity;
+            const result = await searchLinkup(
+              linkupQuery.query,
+              linkupQuery.schema,
+            );
 
-          if (existingLocations.length > 0 && existingLocations[0]) {
-            locationEntity = existingLocations[0];
-          } else {
-            locationEntity = await createEntity({
-              name: hq.headquartersLocation,
-              type: "LOCATION",
-              description: `Headquarters of ${company.name}`,
-            });
+            if (result) {
+              await ingestText(
+                JSON.stringify(result, null, 2),
+                "SEARCH",
+                "PRIVATE",
+              );
+              saturatedCount++;
+            }
+          } catch (e) {
+            console.error(
+              `Failed to saturate entity ${entity.name} for relation ${relationType}:`,
+              e,
+            );
           }
-
-          // Create the relation
-          await createRelation({
-            sourceEntityId: company.id,
-            targetEntityId: locationEntity.id,
-            type: "HAS_HEADQUARTERS",
-            description: `${company.name} is headquartered in ${hq.headquartersLocation}`,
-          });
-
-          saturatedCount++;
-        } catch (e) {
-          console.error(`Failed to saturate company ${company.name}:`, e);
         }
       }
 

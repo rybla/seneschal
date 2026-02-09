@@ -15,7 +15,7 @@ import {
   type SelectEntity,
   type SelectRelation,
 } from "@/db/schema";
-import { eq, inArray, or, notInArray, and } from "drizzle-orm";
+import { eq, inArray, or, notInArray, and, sql, count } from "drizzle-orm";
 import type { GraphData, Node, Edge } from "@/types";
 
 /**
@@ -280,4 +280,81 @@ export async function findEntitiesByNames(
     .select()
     .from(entitiesTable)
     .where(inArray(entitiesTable.name, names));
+}
+
+/**
+ * Finds common relation patterns in the knowledge graph.
+ * A pattern is a combination of an entity type and a relation type.
+ * @param threshold The minimum number of times a pattern must appear to be considered common.
+ * @returns A map where keys are entity types and values are arrays of common relation types.
+ */
+export async function findCommonRelationPatterns(
+  threshold: number = 2,
+): Promise<Map<string, string[]>> {
+  const patterns = await db
+    .select({
+      entityType: entitiesTable.type,
+      relationType: relationsTable.type,
+      count: count(relationsTable.id),
+    })
+    .from(relationsTable)
+    .leftJoin(
+      entitiesTable,
+      eq(relationsTable.sourceEntityId, entitiesTable.id),
+    )
+    .groupBy(entitiesTable.type, relationsTable.type)
+    .having(({ count }) => sql`${count} >= ${threshold}`);
+
+  const result = new Map<string, string[]>();
+  for (const pattern of patterns) {
+    if (pattern.entityType && pattern.relationType) {
+      if (!result.has(pattern.entityType)) {
+        result.set(pattern.entityType, []);
+      }
+      result.get(pattern.entityType)?.push(pattern.relationType);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Finds entities that are missing common relations.
+ * @param patterns A map of entity types to common relation types.
+ * @returns A map where keys are entities and values are arrays of missing relation types.
+ */
+export async function findEntitiesWithMissingRelations(
+  patterns: Map<string, string[]>,
+): Promise<Map<SelectEntity, string[]>> {
+  const result = new Map<SelectEntity, string[]>();
+
+  for (const [entityType, relationTypes] of patterns.entries()) {
+    for (const relationType of relationTypes) {
+      // Subquery to find all entity IDs of the given type that have the relation
+      const entitiesWithRelation = db
+        .select({ id: relationsTable.sourceEntityId })
+        .from(relationsTable)
+        .where(eq(relationsTable.type, relationType));
+
+      // Find all entities of the given type whose IDs are not in the subquery result
+      const entitiesWithoutRelation = await db
+        .select()
+        .from(entitiesTable)
+        .where(
+          and(
+            eq(entitiesTable.type, entityType),
+            notInArray(entitiesTable.id, entitiesWithRelation),
+          ),
+        );
+
+      for (const entity of entitiesWithoutRelation) {
+        if (!result.has(entity)) {
+          result.set(entity, []);
+        }
+        result.get(entity)?.push(relationType);
+      }
+    }
+  }
+
+  return result;
 }

@@ -33,7 +33,7 @@ export async function fetchRelations(): Promise<Relation[]> {
 export async function uploadDocument(
   file: File,
   privacyLevel: "PUBLIC" | "PRIVATE",
-): Promise<{ success: boolean; documentId: number; entityId: number }> {
+): Promise<{ success: boolean; documentId: number }> {
   const res = await client.api.ingest.$post({
     form: {
       file,

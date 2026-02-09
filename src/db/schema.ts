@@ -13,6 +13,9 @@ export const documentsTable = sqliteTable("documents", {
   privacyLevel: text("privacy_level", { enum: ["PUBLIC", "PRIVATE"] })
     .notNull()
     .default("PRIVATE"),
+  sourceType: text("source_type", { enum: ["USER", "SEARCH"] })
+    .notNull()
+    .default("USER"),
   lastIndexedAt: integer("last_indexed_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).default(
     sql`(CURRENT_TIMESTAMP)`,
@@ -111,6 +114,9 @@ export const entitiesTable = sqliteTable("entities", {
   privacyLevel: text("privacy_level", { enum: ["PUBLIC", "PRIVATE"] })
     .notNull()
     .default("PRIVATE"),
+  sourceType: text("source_type", { enum: ["USER", "SEARCH"] })
+    .notNull()
+    .default("USER"),
   sourceDocumentId: integer("source_document_id").references(
     () => documentsTable.id,
   ),
@@ -159,6 +165,9 @@ export const relationsTable = sqliteTable("relations", {
   privacyLevel: text("privacy_level", { enum: ["PUBLIC", "PRIVATE"] })
     .notNull()
     .default("PRIVATE"),
+  sourceType: text("source_type", { enum: ["USER", "SEARCH"] })
+    .notNull()
+    .default("USER"),
   sourceDocumentId: integer("source_document_id").references(
     () => documentsTable.id,
   ),

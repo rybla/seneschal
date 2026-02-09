@@ -7,6 +7,19 @@ const client = new LinkupClient({
   apiKey: env.LINKUP_API_KEY,
 });
 
+export async function searchLinkup(
+  query: string,
+  schema: Record<string, unknown>,
+): Promise<unknown> {
+  const response = await client.search({
+    query,
+    depth: "standard",
+    outputType: "structured",
+    structuredOutputSchema: schema,
+  });
+  return response;
+}
+
 // const CompanyRevenueSchema = {
 //     "type": "object",
 //     "properties": {
