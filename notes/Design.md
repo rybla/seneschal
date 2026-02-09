@@ -35,6 +35,12 @@ The system is private since it builds this relational index and queries it only 
 3. System extracts entities and relations from the text.
 4. System stores the document and its extracted information in the database.
 
+### Database Node Merging
+
+Once the database is populated with documents and their extracted information, the system can use a vector embedding to merge equivalent nodes (perhaps names are spelled slightly differently or with words in a slightly different order). This is done by computing the vector embedding of each node and then clustering the nodes based on their vector embeddings. 
+
+Use [Orama](https://orama.com/product/vector-database) for the vector database framework.
+
 ## Autonomous Actions
 
 The system can also take autonomous action on behalf of the user. In particular:

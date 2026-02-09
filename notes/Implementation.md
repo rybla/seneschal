@@ -9,6 +9,7 @@ Technology stack:
 - [Hono](https://hono.dev/) for web server library
 - [Gemini API](https://ai.google.dev/gemini-api/docs) for general AI
 - [LinkUp](https://www.linkup.so) for agentic AI internet search
+- Use [Orama](https://orama.com/product/vector-database) for the vector database framework
 
 ## Hono Server
 
