@@ -1,4 +1,8 @@
+import { createDocument, createEntity, createRelation, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities } from "@/db/query";
 import env from "@/env";
+import { extractQueryEntities } from "@/gemini";
+import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
+import * as pdf from "@/pdf";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
@@ -35,17 +39,14 @@ const routes = app
         await Bun.write(`${uploadsDir}/${file.name}`, file);
 
         // Extract text
-        const { extractTextFromPdf } = await import("@/pdf");
+
         let textContent: string;
         try {
-            textContent = await extractTextFromPdf(bufferNode);
+            textContent = await pdf.extractTextFromPdf(bufferNode);
         } catch (e) {
             console.error("Failed to extract text from PDF", e);
             return c.json({ error: "Failed to parse PDF" }, 500);
         }
-
-        // Create document in DB
-        const { createDocument, createEntity, createRelation, getDocumentByPath } = await import("@/db/query");
 
         try {
             const docPath = `${process.cwd()}/uploads/${file.name}`;
@@ -98,8 +99,7 @@ const routes = app
         }
     })
     .on("POST", "/merge-nodes", async (c) => {
-        const { getAllEntities, mergeEntities } = await import("@/db/query");
-        const { getOramaDb, indexEntity, findSimilarEntities } = await import("@/orama");
+
 
         try {
             // 1. Fetch all entities
@@ -179,8 +179,7 @@ const routes = app
         query: z.string()
     })), async (c) => {
         const { query } = c.req.valid("json");
-        const { extractQueryEntities } = await import("@/gemini");
-        const { findEntitiesByNames, getGraphContext } = await import("@/db/query");
+
 
         try {
             const entities = await extractQueryEntities(query);
@@ -204,7 +203,7 @@ const routes = app
         }
     })
     .get("/documents", async (c) => {
-        const { getAllDocuments } = await import("@/db/query");
+
         try {
             const documents = await getAllDocuments();
             return c.json(documents);
@@ -214,7 +213,7 @@ const routes = app
         }
     })
     .get("/entities", async (c) => {
-        const { getAllEntities } = await import("@/db/query");
+
         try {
             const entities = await getAllEntities();
             return c.json(entities);
@@ -224,7 +223,7 @@ const routes = app
         }
     })
     .get("/relations", async (c) => {
-        const { getAllRelations } = await import("@/db/query");
+
         try {
             const relations = await getAllRelations();
             return c.json(relations);

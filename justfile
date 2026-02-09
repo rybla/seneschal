@@ -60,16 +60,14 @@ create_changelog_entry:
 
 validate: validate_begin lint typecheck test build test_start_development_server create_changelog_entry validate_end
 
-validate_no_changelog: validate_begin lint typecheck test build test_start_development_server validate_end
-
 # Start a development server.
-start_development_server: validate_no_changelog
+start_development_server:
     bun --hot src/server.ts
 
 dev: start_development_server
 
 # Start a production server.
-start_production_server: validate_no_changelog
+start_production_server:
     NODE_ENV=production bun src/server.ts
 
 prod: start_production_server
