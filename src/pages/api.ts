@@ -1,11 +1,15 @@
+import type { AppType } from "@/server";
+import { hc } from "hono/client";
 import type {
   Document,
   Entity,
-  Relation,
   GraphData,
   MergeResult,
+  Relation,
   SaturateResult,
 } from "./types";
+
+const client = hc<AppType>("http://localhost");
 
 const API_BASE = "/api";
 
