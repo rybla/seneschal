@@ -1,5 +1,5 @@
 ---
-trigger: manual
+trigger: always_on
 ---
 
 This project uses a Hono web server. All Hono web server endpoints must make appropriate use of zod validators.  In particular:

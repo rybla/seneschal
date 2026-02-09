@@ -50,3 +50,31 @@ export async function createRelation(data: InsertRelation): Promise<SelectRelati
     if (!relation) throw new Error("Failed to create relation");
     return relation;
 }
+
+/**
+ * Retrieves all entities from the database.
+ * @returns An array of all entities.
+ */
+export async function getAllEntities(): Promise<SelectEntity[]> {
+    return db.select().from(entitiesTable);
+}
+
+/**
+ * Merges two entities by moving all relations from the loser to the winner and deleting the loser.
+ * @param winnerId The ID of the entity to keep.
+ * @param loserId The ID of the entity to merge into the winner and delete.
+ */
+export async function mergeEntities(winnerId: number, loserId: number): Promise<void> {
+    // 1. Update relations where the loser is the source
+    await db.update(relationsTable)
+        .set({ sourceEntityId: winnerId })
+        .where(eq(relationsTable.sourceEntityId, loserId));
+
+    // 2. Update relations where the loser is the target
+    await db.update(relationsTable)
+        .set({ targetEntityId: winnerId })
+        .where(eq(relationsTable.targetEntityId, loserId));
+
+    // 3. Delete the loser entity
+    await db.delete(entitiesTable).where(eq(entitiesTable.id, loserId));
+}

@@ -7,7 +7,7 @@ Technology stack:
 - [SQLite](https://www.sqlite.org/) for database
 - [Drizzle](https://orm.drizzle.team/) for database schema and queries
 - [Hono](https://hono.dev/) for web server library
-- [Gemini API](https://ai.google.dev/gemini-api/docs) for general AI
+- [Gemini API](https://ai.google.dev/gemini-api/docs) for general LLM functionalities via the "@google/genai" package
 - [LinkUp](https://www.linkup.so) for agentic AI internet search
 - Use [Orama](https://orama.com/product/vector-database) for the vector database framework
 

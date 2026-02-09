@@ -3,8 +3,10 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "@google/genai": "^1.40.0",
     "@hono/zod-validator": "^0.7.6",
     "@libsql/client": "^0.17.0",
+    "@orama/orama": "^3.1.18",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.11.9",
     "linkup-sdk": "^2.6.2",

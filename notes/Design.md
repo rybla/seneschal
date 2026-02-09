@@ -37,9 +37,16 @@ The system is private since it builds this relational index and queries it only 
 
 ### Database Node Merging
 
-Once the database is populated with documents and their extracted information, the system can use a vector embedding to merge equivalent nodes (perhaps names are spelled slightly differently or with words in a slightly different order). This is done by computing the vector embedding of each node and then clustering the nodes based on their vector embeddings. 
+1. System computes vector embeddings for each node in the knowledge graph.
+2. System clusters nodes based on their vector embeddings to identify equivalent entities (e.g., names with different spellings or word orders).
+3. System merges equivalent nodes to consolidate the graph while preserving all existing relations.
 
-Use [Orama](https://orama.com/product/vector-database) for the vector database framework.
+### User Query
+
+1. User submits a query.
+2. System extracts entities and relations from the query using an LLM.
+3. System queries the knowledge graph for all relevant information within a certain radius of the query entities (in terms of graph distance)
+4. System generates a structured response that summarizes all the information, so it can be rendered in the UI with a certain degree of interactivity and structured formatting.
 
 ## Autonomous Actions
 
