@@ -41,6 +41,12 @@ The system is private since it builds this relational index and queries it only 
 2. System clusters nodes based on their vector embeddings to identify equivalent entities (e.g., names with different spellings or word orders).
 3. System merges equivalent nodes to consolidate the graph while preserving all existing relations.
 
+### Database Saturation
+
+1. Analyze the database for missing information. In particular, instances of relations that are missing for some key entities that are involved in many other relations.
+2. Group these missing relations by involved entity.
+3. For each group of missing relations, use LinkUp agentic search (demonstrated in `./scripts/test_linkup.ts`) to find that missing information. Extract the results similarly to ingesting new documents and insert the new information into the database.
+
 ### User Query
 
 1. User submits a query.

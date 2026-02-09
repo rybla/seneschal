@@ -1,6 +1,7 @@
-import { createDocument, createEntity, createRelation, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities } from "@/db/query";
+import { type DocumentType } from "@/db/schema";
+import { createDocument, createEntity, createRelation, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities, updateDocument } from "@/db/query";
 import env from "@/env";
-import { extractEntitiesAndRelations, extractQueryEntities } from "@/gemini";
+import { classifyDocument, extractEntitiesAndRelations, extractQueryEntities, extractStructuredMetadata } from "@/gemini";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
 import { zValidator } from "@hono/zod-validator";
@@ -50,6 +51,11 @@ const routes = app
 
         try {
             const docPath = `${process.cwd()}/uploads/${file.name}`;
+
+            // Classify document
+            const documentType = await classifyDocument(textContent);
+            console.log(`Classified document ${file.name} as ${documentType}`);
+
             let document = await getDocumentByPath(docPath);
 
             if (!document) {
@@ -57,12 +63,19 @@ const routes = app
                     path: docPath,
                     title: file.name,
                     content: textContent,
+                    type: documentType as DocumentType,
                     securityLevel: "standard",
                     metadata: {},
                 });
             }
 
-            // Placeholder for entity extraction
+            // Extract type-specific structured metadata for autonomous actions (Invoice Checker, Scope Checker, Non-compete Checker)
+            const structuredMetadata = await extractStructuredMetadata(textContent, documentType);
+            if (structuredMetadata && Object.keys(structuredMetadata).length > 0) {
+                await updateDocument(document.id, { metadata: structuredMetadata, lastIndexedAt: new Date() });
+            }
+
+            // Entity and relation extraction
             // Real implementation would use an LLM here
             // For now, we'll just create a dummy entity for the document itself if needed, 
             // but the design says "extract entities and relations".
@@ -70,8 +83,8 @@ const routes = app
 
             const entity = await createEntity({
                 name: file.name.replace(".pdf", ""),
-                type: "DOCUMENT",
-                description: "Imported document",
+                type: documentType, // Use the classified type (e.g. INVOICE)
+                description: `Imported ${documentType} document`,
                 sourceDocumentId: document.id,
                 metadata: {},
             });
@@ -86,7 +99,7 @@ const routes = app
             for (const chunk of chunks) {
                 if (chunk.trim().length < 50) continue; // Skip very short chunks
 
-                const { entities, relations } = await extractEntitiesAndRelations(chunk);
+                const { entities, relations } = await extractEntitiesAndRelations(chunk, documentType);
 
                 // 1. Process Entities
                 for (const extractedEntity of entities) {

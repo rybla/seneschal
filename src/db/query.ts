@@ -3,7 +3,18 @@
  */
 
 import db from "@/db";
-import { documentsTable, entitiesTable, type InsertDocument, type InsertEntity, type InsertRelation, relationsTable, type SelectDocument, type SelectEntity, type SelectRelation } from "@/db/schema";
+import {
+    documentsTable,
+    entitiesTable,
+    type DocumentMetadataByType,
+    type InsertDocument,
+    type InsertEntity,
+    type InsertRelation,
+    relationsTable,
+    type SelectDocument,
+    type SelectEntity,
+    type SelectRelation,
+} from "@/db/schema";
 import { eq, inArray, or } from "drizzle-orm";
 import type { GraphData, Node, Edge } from "@/types";
 
@@ -28,6 +39,25 @@ export async function getDocumentByPath(path: string): Promise<SelectDocument | 
         where: eq(documentsTable.path, path),
     });
     return document;
+}
+
+/**
+ * Updates a document's metadata (and optionally other fields). Used after extracting type-specific structured metadata during ingestion.
+ */
+export async function updateDocument(
+    documentId: number,
+    updates: { metadata?: DocumentMetadataByType; lastIndexedAt?: Date }
+): Promise<SelectDocument> {
+    const [doc] = await db
+        .update(documentsTable)
+        .set({
+            ...updates,
+            updatedAt: new Date(),
+        })
+        .where(eq(documentsTable.id, documentId))
+        .returning();
+    if (!doc) throw new Error("Failed to update document");
+    return doc;
 }
 
 /**
