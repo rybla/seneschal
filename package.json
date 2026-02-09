@@ -8,6 +8,7 @@
     "drizzle-orm": "^0.45.1",
     "hono": "^4.11.9",
     "linkup-sdk": "^2.6.2",
+    "pdf-parse": "^2.4.5",
     "react": "^19",
     "react-dom": "^19",
     "zod": "^4.3.6"

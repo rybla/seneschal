@@ -30,10 +30,10 @@ The system is private since it builds this relational index and queries it only 
 
 ### Document Ingestion
 
-1. User uploads a document
-2. System extracts text from the document
-3. System extracts entities and relations from the text
-4. System stores the document and its extracted information in the database
+1. User uploads a PDF document. It is saved to a local directory.
+2. System extracts text from the document using pdf-parse.
+3. System extracts entities and relations from the text.
+4. System stores the document and its extracted information in the database.
 
 ## Autonomous Actions
 
