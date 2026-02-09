@@ -1,4 +1,4 @@
-import { createDocument, createEntity, createRelation, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities } from "@/db/query";
+import { createDocument, createEntity, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities } from "@/db/query";
 import env from "@/env";
 import { extractQueryEntities } from "@/gemini";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
@@ -76,16 +76,7 @@ const routes = app
                 metadata: {},
             });
 
-            // Create a relation just to show we can
-            // (Self-reference or similar, or just skip if no other entities)
-            await createRelation({
-                sourceEntityId: entity.id,
-                targetEntityId: entity.id,
-                type: "SELF_REFERENCE",
-                description: "Auto-generated self reference for testing",
-                sourceDocumentId: document.id,
-                properties: {},
-            });
+            // TODO: break the document up into clauses and use LLM to extract entities and relations from each passage at a time
 
             return c.json({
                 success: true,
