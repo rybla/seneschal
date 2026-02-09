@@ -52,6 +52,11 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+export interface QueryResponse {
+  graphData: GraphData;
+  answer: string;
+}
+
 export type MergeResult =
   | {
       success: boolean;

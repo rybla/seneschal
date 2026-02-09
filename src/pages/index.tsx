@@ -9,7 +9,7 @@ import {
   queryGraph,
   saturateDatabase,
 } from "./api";
-import type { Document, Entity, Relation, GraphData } from "./types";
+import type { Document, Entity, Relation, QueryResponse } from "./types";
 
 // --- Components ---
 
@@ -68,7 +68,7 @@ function Badge({ children }: { children: React.ReactNode }) {
 function SearchSection() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<GraphData | null>(null);
+  const [data, setData] = useState<QueryResponse | null>(null);
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -108,9 +108,16 @@ function SearchSection() {
         </Button>
       </form>
 
+      {data && (
+        <Card className="answer-card">
+          <h4>Synthesized Answer</h4>
+          <p>{data.answer}</p>
+        </Card>
+      )}
+
       {data ? (
         <Card className="graph-viz">
-          {data.nodes.length === 0 ? (
+          {data.graphData.nodes.length === 0 ? (
             <div style={{ padding: "2rem", textAlign: "center" }}>
               <p>No results found for your query.</p>
             </div>
@@ -124,10 +131,11 @@ function SearchSection() {
               }}
             >
               <h4 style={{ marginBottom: "1rem" }}>
-                Found {data.nodes.length} Nodes, {data.edges.length} Edges
+                Found {data.graphData.nodes.length} Nodes,{" "}
+                {data.graphData.edges.length} Edges
               </h4>
               <ul className="data-list">
-                {data.nodes.map((node) => (
+                {data.graphData.nodes.map((node) => (
                   <li key={node.id} className="list-item">
                     <div
                       style={{

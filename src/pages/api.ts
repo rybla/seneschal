@@ -3,7 +3,7 @@ import { hc } from "hono/client";
 import type {
   Document,
   Entity,
-  GraphData,
+  QueryResponse,
   MergeResult,
   Relation,
   SaturateResult,
@@ -53,7 +53,7 @@ export async function saturateDatabase(): Promise<SaturateResult> {
   return res.json();
 }
 
-export async function queryGraph(query: string): Promise<GraphData> {
+export async function queryGraph(query: string): Promise<QueryResponse> {
   const res = await client.api.query.$post({ json: { query } });
   if (!res.ok) throw new Error("Failed to query graph");
   return res.json();

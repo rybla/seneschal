@@ -20,6 +20,7 @@ import {
   extractEntitiesAndRelations,
   extractQueryEntities,
   extractStructuredMetadata,
+  synthesizeAnswerFromGraph,
 } from "@/gemini";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
@@ -28,6 +29,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import z from "zod";
+import { logger } from "hono/logger";
 
 // -----------------------------------------------------------------------------
 
@@ -37,6 +39,7 @@ import z from "zod";
 export const app = new Hono();
 
 app.use(cors());
+app.use(logger());
 
 // -----------------------------------------------------------------------------
 
@@ -337,7 +340,17 @@ const routes = app
         }
 
         const graphData = await getGraphContext(ids, 2); // Depth 2
-        return c.json(graphData);
+
+        if (graphData.nodes.length === 0) {
+          return c.json({
+            graphData: { nodes: [], edges: [] },
+            answer: "No relevant information found.",
+          });
+        }
+
+        const answer = await synthesizeAnswerFromGraph(query, graphData);
+
+        return c.json({ graphData, answer });
       } catch (e) {
         console.error("Query error", e);
         return c.json({ error: "Query failed" }, 500);
