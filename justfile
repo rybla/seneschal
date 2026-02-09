@@ -27,6 +27,24 @@ test:
     bun test
     @echo "Successfully ran tests."
 
+clean_build:
+    @echo
+    @echo "Cleaning build directory..."
+    rm -rf ./dist
+    @echo "Successfully cleaned build directory."
+
+build: lint typecheck test clean_build
+    @echo
+    @echo "Bundling pages..."
+    bun build ./src/pages/*.html --outdir ./dist
+    @echo "Successfully bundled pages."
+
+test_start_development_server: build
+    @echo
+    @echo "Trying to start development server..."
+    bun --hot src/server.ts & sleep 2; kill $!
+    @echo "Successfully was able to start development server."
+
 validate_begin:
     @echo
     @echo "Running all code validation..."
@@ -35,28 +53,16 @@ validate_end:
     @echo
     @echo "Successfully completed all code validation."
 
-validate: validate_begin lint typecheck test validate_end
-
-clean_build:
-    @echo
-    @echo "Cleaning build directory..."
-    rm -rf ./dist
-    @echo "Successfully cleaned build directory."
-
-build: validate clean_build
-    @echo
-    @echo "Bundling pages..."
-    bun build ./src/pages/*.html --outdir ./dist
-    @echo "Successfully bundled pages."
+validate: validate_begin lint typecheck test build test_start_development_server validate_end
 
 # Start a development server.
-start_development_server: build
+start_development_server: validate
     bun --hot src/server.ts
 
 dev: start_development_server
 
 # Start a production server.
-start_production_server: build
+start_production_server: validate
     NODE_ENV=production bun src/server.ts
 
 prod: start_production_server
