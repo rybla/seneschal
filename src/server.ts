@@ -175,6 +175,34 @@ const routes = app
             return c.json({ error: "Merge failed" }, 500);
         }
     })
+    .on("POST", "/query", zValidator("json", z.object({
+        query: z.string()
+    })), async (c) => {
+        const { query } = c.req.valid("json");
+        const { extractQueryEntities } = await import("@/gemini");
+        const { findEntitiesByNames, getGraphContext } = await import("@/db/query");
+
+        try {
+            const entities = await extractQueryEntities(query);
+            // If no entities found, returning empty graph
+            if (entities.length === 0) {
+                return c.json({ nodes: [], edges: [] });
+            }
+
+            const resolvedEntities = await findEntitiesByNames(entities);
+            const ids = resolvedEntities.map(e => e.id);
+
+            if (ids.length === 0) {
+                return c.json({ nodes: [], edges: [] });
+            }
+
+            const graphData = await getGraphContext(ids, 2); // Depth 2
+            return c.json(graphData);
+        } catch (e) {
+            console.error("Query error", e);
+            return c.json({ error: "Query failed" }, 500);
+        }
+    })
 
 // -----------------------------------------------------------------------------
 
