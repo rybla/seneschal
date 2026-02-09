@@ -26,6 +26,15 @@ During conversations, a conversation-specific knowledge graph is maintained that
 
 The system is private since it builds this relational index and queries it only locally. There can be explicit clearance levels for certain documents to ensure that external queried never leak info about them. This protocol is formally specified and actively enforced by a rich typed encoding of the domain as well as runtime assertions.
 
+## Workflows
+
+### Document Ingestion
+
+1. User uploads a document
+2. System extracts text from the document
+3. System extracts entities and relations from the text
+4. System stores the document and its extracted information in the database
+
 ## Autonomous Action
 
 The system can also take autonomous action on behalf of the user. In particular:
