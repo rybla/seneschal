@@ -9,7 +9,13 @@ import {
   queryGraph,
   saturateDatabase,
 } from "./api";
-import type { Document, Entity, Relation, QueryResponse } from "./types";
+import type {
+  Document,
+  Entity,
+  Relation,
+  QueryResponse,
+  PrivacyLevel,
+} from "./types";
 
 // --- Components ---
 
@@ -69,13 +75,14 @@ function SearchSection() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<QueryResponse | null>(null);
+  const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>("PRIVATE");
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const result = await queryGraph(query);
+      const result = await queryGraph(query, privacyLevel);
       setData(result);
     } catch (err) {
       console.error(err);
@@ -92,20 +99,54 @@ function SearchSection() {
         onSubmit={handleSearch}
         style={{
           display: "flex",
+          flexDirection: "column",
           gap: "1rem",
           marginBottom: "2rem",
           marginTop: "1rem",
         }}
       >
-        <input
-          type="text"
-          placeholder="Ask a question..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <Button disabled={loading}>
-          {loading ? "Searching..." : "Search"}
-        </Button>
+        <div style={{ display: "flex", gap: "1rem" }}>
+          <input
+            type="text"
+            placeholder="Ask a question..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            style={{ flexGrow: 1 }}
+          />
+          <Button disabled={loading}>
+            {loading ? "Searching..." : "Search"}
+          </Button>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: "1rem",
+          }}
+        >
+          <span>Privacy Level</span>
+          <div className="privacy-toggle">
+            <button
+              type="button"
+              onClick={() => setPrivacyLevel("PRIVATE")}
+              className={`toggle-btn ${
+                privacyLevel === "PRIVATE" ? "active" : ""
+              }`}
+            >
+              Private
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrivacyLevel("PUBLIC")}
+              className={`toggle-btn ${
+                privacyLevel === "PUBLIC" ? "active" : ""
+              }`}
+            >
+              Public
+            </button>
+          </div>
+        </div>
       </form>
 
       {data && (

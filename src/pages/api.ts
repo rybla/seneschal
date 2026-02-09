@@ -7,6 +7,7 @@ import type {
   MergeResult,
   Relation,
   SaturateResult,
+  PrivacyLevel,
 } from "./types";
 
 const client = hc<AppType>("/");
@@ -55,8 +56,11 @@ export async function saturateDatabase(): Promise<SaturateResult> {
   return res.json();
 }
 
-export async function queryGraph(query: string): Promise<QueryResponse> {
-  const res = await client.api.query.$post({ json: { query } });
+export async function queryGraph(
+  query: string,
+  privacy_level: PrivacyLevel,
+): Promise<QueryResponse> {
+  const res = await client.api.query.$post({ json: { query, privacy_level } });
   if (!res.ok) throw new Error("Failed to query graph");
   return res.json();
 }

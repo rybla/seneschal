@@ -21,7 +21,7 @@ import {
   extractQueryEntities,
   extractStructuredMetadata,
   synthesizeAnswerFromGraph,
-} from "@/gemini";
+} from "@/llm";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
 import { zValidator } from "@hono/zod-validator";
@@ -83,7 +83,7 @@ const routes = app
         const docPath = `${process.cwd()}/uploads/${file.name}`;
 
         // Classify document
-        const documentType = await classifyDocument(textContent);
+        const documentType = await classifyDocument(textContent, privacyLevel);
         console.log(`Classified document ${file.name} as ${documentType}`);
 
         let document = await getDocumentByPath(docPath);
@@ -104,6 +104,7 @@ const routes = app
         const structuredMetadata = await extractStructuredMetadata(
           textContent,
           documentType,
+          privacyLevel,
         );
         if (structuredMetadata && Object.keys(structuredMetadata).length > 0) {
           await updateDocument(document.id, {
@@ -139,6 +140,7 @@ const routes = app
           const { entities, relations } = await extractEntitiesAndRelations(
             chunk,
             documentType,
+            privacyLevel,
           );
 
           // 1. Process Entities
@@ -326,10 +328,10 @@ const routes = app
       }),
     ),
     async (c) => {
-      const { query } = c.req.valid("json");
+      const { query, privacy_level } = c.req.valid("json");
 
       try {
-        const entities = await extractQueryEntities(query);
+        const entities = await extractQueryEntities(query, privacy_level);
         // If no entities found, returning empty graph
         if (entities.length === 0) {
           return c.json({ nodes: [], edges: [] });
@@ -351,7 +353,11 @@ const routes = app
           });
         }
 
-        const answer = await synthesizeAnswerFromGraph(query, graphData);
+        const answer = await synthesizeAnswerFromGraph(
+          query,
+          graphData,
+          privacy_level,
+        );
 
         return c.json({ graphData, answer });
       } catch (e) {

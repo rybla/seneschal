@@ -1,17 +1,53 @@
 import env from "@/env";
 import { GoogleGenAI } from "@google/genai";
+import { Ollama } from "ollama";
+import type { PrivacyLevel } from "./types";
 
 const ai = new GoogleGenAI({
   apiKey: env.GEMINI_API_KEY,
 });
-export default ai;
+
+const ollama = new Ollama({
+  headers: { Authorization: "Bearer " + env.OLLAMA_API_KEY },
+});
+
+async function generateText(
+  prompt: string,
+  privacyLevel: PrivacyLevel,
+): Promise<string> {
+  if (privacyLevel === "PRIVATE") {
+    const response = await ollama.chat({
+      model: "gpt-oss:20b-cloud",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+    return response.message.content;
+  }
+
+  // Default to PUBLIC/Gemini
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: prompt,
+  });
+
+  const text = response.text;
+
+  return text ?? "";
+}
 
 /**
  * Extracts entities and relations from a user query using Gemini.
  * @param query The user's natural language query.
  * @returns A list of potential entity names found in the query.
  */
-export async function extractQueryEntities(query: string): Promise<string[]> {
+export async function extractQueryEntities(
+  query: string,
+  privacyLevel: PrivacyLevel,
+): Promise<string[]> {
   const prompt = `
     Extract the key entities (people, companies, contracts, clauses, etc.) from the following query.
     Return ONLY a JSON array of strings, where each string is an extracted entity name.
@@ -21,12 +57,7 @@ export async function extractQueryEntities(query: string): Promise<string[]> {
     `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-
-    const text = response.text;
+    const text = await generateText(prompt, privacyLevel);
 
     if (!text) return [];
 
@@ -60,7 +91,10 @@ const VALID_DOCUMENT_TYPES = [
  * @param text The text content of the document.
  * @returns The estimated document type.
  */
-export async function classifyDocument(text: string): Promise<string> {
+export async function classifyDocument(
+  text: string,
+  privacyLevel: PrivacyLevel,
+): Promise<string> {
   const prompt = `
     Classify the following document into one of these types:
     - GENERIC
@@ -81,12 +115,9 @@ export async function classifyDocument(text: string): Promise<string> {
     `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-
-    const result = response.text?.trim().toUpperCase();
+    const result = (await generateText(prompt, privacyLevel))
+      .trim()
+      .toUpperCase();
     if (
       result &&
       VALID_DOCUMENT_TYPES.includes(
@@ -118,6 +149,7 @@ const RELATION_TYPE_LIST =
 export async function extractEntitiesAndRelations(
   text: string,
   documentType: string = "GENERIC",
+  privacyLevel: PrivacyLevel,
 ): Promise<{
   entities: { name: string; type: string; description: string }[];
   relations: {
@@ -151,12 +183,7 @@ export async function extractEntitiesAndRelations(
     `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-
-    const resultText = response.text;
+    const resultText = await generateText(prompt, privacyLevel);
     if (!resultText) return { entities: [], relations: [] };
 
     const jsonStr = resultText
@@ -194,6 +221,7 @@ const METADATA_DOCUMENT_TYPES = [
 export async function extractStructuredMetadata(
   text: string,
   documentType: string,
+  privacyLevel: PrivacyLevel,
 ): Promise<Record<string, unknown> | null> {
   if (
     !METADATA_DOCUMENT_TYPES.includes(
@@ -213,11 +241,7 @@ export async function extractStructuredMetadata(
   const prompt = `${prompts[documentType]}\n\nDocument:\n"${text.slice(0, 4000)}"`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-    const resultText = response.text;
+    const resultText = await generateText(prompt, privacyLevel);
     if (!resultText) return null;
     const jsonStr = resultText
       .replace(/```json/g, "")
@@ -243,6 +267,7 @@ export async function synthesizeAnswerFromGraph(
     nodes: { id: number; name: string; type: string }[];
     edges: { source: number; target: number; type: string }[];
   },
+  privacyLevel: PrivacyLevel,
 ): Promise<string> {
   const contextStr = `
     Nodes:
@@ -272,15 +297,8 @@ export async function synthesizeAnswerFromGraph(
     `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-
-    return (
-      response.text?.trim() ??
-      "I could not find an answer in the provided context."
-    );
+    const text = await generateText(prompt, privacyLevel);
+    return text.trim() ?? "I could not find an answer in the provided context.";
   } catch (e) {
     console.error("Failed to synthesize answer from graph", e);
     return "I encountered an error while trying to find an answer.";

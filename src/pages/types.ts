@@ -1,5 +1,7 @@
 import type { JSONValue } from "hono/utils/types";
 
+export type PrivacyLevel = "PUBLIC" | "PRIVATE";
+
 export interface Document {
   id: number;
   path: string;
