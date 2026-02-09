@@ -56,10 +56,11 @@ const routes = app
       "form",
       z.object({
         file: z.instanceof(File),
+        privacyLevel: z.enum(["PUBLIC", "PRIVATE"]),
       }),
     ),
     async (c) => {
-      const { file } = c.req.valid("form");
+      const { file, privacyLevel } = c.req.valid("form");
 
       const buffer = await file.arrayBuffer();
       const bufferNode = Buffer.from(buffer);
@@ -94,6 +95,7 @@ const routes = app
             content: textContent,
             type: documentType as DocumentType,
             securityLevel: "standard",
+            privacyLevel,
             metadata: {},
           });
         }

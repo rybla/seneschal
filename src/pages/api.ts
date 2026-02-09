@@ -31,10 +31,12 @@ export async function fetchRelations(): Promise<Relation[]> {
 
 export async function uploadDocument(
   file: File,
+  privacyLevel: "PUBLIC" | "PRIVATE",
 ): Promise<{ success: boolean; documentId: number; entityId: number }> {
   const res = await client.api.ingest.$post({
     form: {
       file,
+      privacyLevel,
     },
   });
   if (!res.ok) throw new Error("Failed to upload document");

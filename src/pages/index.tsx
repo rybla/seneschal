@@ -270,13 +270,16 @@ function DataLists() {
 function IngestModal({ onClose }: { onClose: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [privacyLevel, setPrivacyLevel] = useState<"PRIVATE" | "PUBLIC">(
+    "PRIVATE",
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!file) return;
     setUploading(true);
     try {
-      await uploadDocument(file);
+      await uploadDocument(file, privacyLevel);
       alert("Document uploaded successfully!");
       onClose();
     } catch (e) {
@@ -321,6 +324,64 @@ function IngestModal({ onClose }: { onClose: () => void }) {
               {file ? file.name : "Click to select PDF"}
             </p>
             {!file && <p style={{ fontSize: "0.8rem" }}>Supports PDF only</p>}
+          </div>
+
+          <div
+            style={{
+              marginBottom: "1.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>Privacy Level</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                border: "1px solid var(--card-border)",
+                borderRadius: "8px",
+                padding: "4px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPrivacyLevel("PRIVATE")}
+                style={{
+                  background:
+                    privacyLevel === "PRIVATE"
+                      ? "var(--primary-color)"
+                      : "transparent",
+                  color:
+                    privacyLevel === "PRIVATE" ? "white" : "var(--text-main)",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                Private
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrivacyLevel("PUBLIC")}
+                style={{
+                  background:
+                    privacyLevel === "PUBLIC"
+                      ? "var(--primary-color)"
+                      : "transparent",
+                  color:
+                    privacyLevel === "PUBLIC" ? "white" : "var(--text-main)",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                Public
+              </button>
+            </div>
           </div>
 
           <div
