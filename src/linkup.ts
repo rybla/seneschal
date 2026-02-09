@@ -1,7 +1,7 @@
-import { LinkupClient, type LinkupSearchResponse, type SearchParams, type Structured } from "linkup-sdk";
-import env from './env';
-import z from "zod";
 import { toJsonSchema } from "@/utility";
+import { LinkupClient } from "linkup-sdk";
+import z from "zod";
+import env from './env';
 
 const client = new LinkupClient({
     apiKey: env.LINKUP_API_KEY,
