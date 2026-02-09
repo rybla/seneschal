@@ -42,7 +42,7 @@ build: lint typecheck test clean_build
 test_start_development_server: build
     @echo
     @echo "Trying to start development server..."
-    bun --hot src/server.ts & sleep 2; kill $!
+    bun src/server.ts & sleep 2; kill $!
     @echo "Successfully was able to start development server."
 
 validate_begin:
