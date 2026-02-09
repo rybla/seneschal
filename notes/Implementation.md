@@ -9,3 +9,16 @@ Technology stack:
 - [Hono](https://hono.dev/) for web server library
 - [Gemini API](https://ai.google.dev/gemini-api/docs) for general AI
 - [LinkUp](https://www.linkup.so) for agentic AI internet search
+
+## Hono Server
+
+The Hono server is defined in `src/index.ts`. It exposes API endpoints for the frontend to use (each API endpoint begins with `/api/`). It serves static files from the `dist` directory, which is populated by the bundling process. The server is started using `bun run dev`.
+
+## Database
+
+The database will be a SQLite database. The schema will be defined using Drizzle.
+
+- Database client is exported from `src/db/index.ts`. It can be imported via `import db from "@/db"`.
+- Database schema definitions are in `src/db/schema.ts`
+- Database queries are in `src/db/query.ts`
+
