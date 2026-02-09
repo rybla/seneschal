@@ -38,3 +38,55 @@ export async function extractQueryEntities(query: string): Promise<string[]> {
         return [];
     }
 }
+
+/**
+ * Extracts entities and relations from a document text chunk.
+ * @param text The text chunk from the document.
+ * @returns An object containing extracted entities and relations.
+ */
+export async function extractEntitiesAndRelations(text: string): Promise<{
+    entities: { name: string; type: string; description: string }[];
+    relations: { source: string; target: string; type: string; description: string }[];
+}> {
+    const prompt = `
+    Analyze the following text from a legal document or contract.
+    Extract key entities (People, Companies, Dates, Clauses, Locations, etc.) and the relations between them.
+    
+    Return a JSON object with two arrays: "entities" and "relations".
+    
+    "entities": [
+        { "name": "Exact Name", "type": "TYPE (e.g. PERSON, COMPANY, DATE, CLAUSE, LOCATION)", "description": "Brief description based on context" }
+    ]
+    
+    "relations": [
+        { "source": "Exact Name of Source Entity", "target": "Exact Name of Target Entity", "type": "RELATION_TYPE (e.g. SIGNED, LOCATED_AT, EXPIRES_ON, CONTAINS)", "description": "Brief explanation of the relation" }
+    ]
+
+    Return ONLY the JSON. No markdown, no explanations.
+
+    Text:
+    "${text}"
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: prompt,
+        });
+
+        const resultText = response.text;
+        if (!resultText) return { entities: [], relations: [] };
+
+        const jsonStr = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const data = JSON.parse(jsonStr);
+
+        return {
+            entities: data.entities || [],
+            relations: data.relations || []
+        };
+
+    } catch (e) {
+        console.error("Failed to extract entities and relations", e);
+        return { entities: [], relations: [] };
+    }
+}

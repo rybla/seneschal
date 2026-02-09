@@ -1,6 +1,6 @@
-import { createDocument, createEntity, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities } from "@/db/query";
+import { createDocument, createEntity, createRelation, findEntitiesByNames, getAllDocuments, getAllEntities, getAllRelations, getDocumentByPath, getGraphContext, mergeEntities } from "@/db/query";
 import env from "@/env";
-import { extractQueryEntities } from "@/gemini";
+import { extractEntitiesAndRelations, extractQueryEntities } from "@/gemini";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
 import { zValidator } from "@hono/zod-validator";
@@ -76,8 +76,59 @@ const routes = app
                 metadata: {},
             });
 
-            // TODO: break the document up into clauses and use LLM to extract entities and relations from each passage at a time
+            // Process the document in chunks to extract entities and relations
+            const chunks = textContent.split(/\n\s*\n/); // Split by double newlines (paragraphs)
+            const createdEntitiesMap = new Map<string, number>(); // Name -> ID
 
+            // Add the document entity itself to the map
+            createdEntitiesMap.set(entity.name, entity.id);
+
+            for (const chunk of chunks) {
+                if (chunk.trim().length < 50) continue; // Skip very short chunks
+
+                const { entities, relations } = await extractEntitiesAndRelations(chunk);
+
+                // 1. Process Entities
+                for (const extractedEntity of entities) {
+                    // Check if we've already created this entity in this transaction
+                    if (createdEntitiesMap.has(extractedEntity.name)) continue;
+
+                    // Check if it exists in the DB (global check could be expensive, but needed for linking)
+                    // For this MVP, we might create duplicates and rely on the "merge" workflow later.
+                    // However, let's try to verify if it exists by name to avoid obvious dupes.
+                    const existing = await findEntitiesByNames([extractedEntity.name]);
+
+                    if (existing.length > 0 && existing[0]) {
+                        createdEntitiesMap.set(extractedEntity.name, existing[0].id);
+                    } else {
+                        const newEntity = await createEntity({
+                            name: extractedEntity.name,
+                            type: extractedEntity.type,
+                            description: extractedEntity.description,
+                            sourceDocumentId: document.id,
+                            metadata: {},
+                        });
+                        createdEntitiesMap.set(extractedEntity.name, newEntity.id);
+                    }
+                }
+
+                // 2. Process Relations
+                for (const relation of relations) {
+                    const sourceId = createdEntitiesMap.get(relation.source);
+                    const targetId = createdEntitiesMap.get(relation.target);
+
+                    if (sourceId && targetId) {
+                        await createRelation({
+                            sourceEntityId: sourceId,
+                            targetEntityId: targetId,
+                            type: relation.type,
+                            description: relation.description,
+                            sourceDocumentId: document.id,
+                            properties: {},
+                        });
+                    }
+                }
+            }
             return c.json({
                 success: true,
                 documentId: document.id,
