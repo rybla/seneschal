@@ -13,7 +13,7 @@ Technology stack:
 
 ## Hono Server
 
-The Hono server is defined in `src/index.ts`. It exposes API endpoints for the frontend to use (each API endpoint begins with `/api/`). It serves static files from the `dist` directory, which is populated by the bundling process. The server is started using `bun run dev`.
+The Hono server is defined in `src/index.ts`. It exposes API endpoints for the frontend to use (each API endpoint begins with `/api/`). It serves static files from the `dist` directory, which is populated by the bundling process. The server is started using `just dev`.
 
 ## Database
 

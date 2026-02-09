@@ -61,6 +61,22 @@ export async function getAllEntities(): Promise<SelectEntity[]> {
 }
 
 /**
+ * Retrieves all documents from the database.
+ * @returns An array of all documents.
+ */
+export async function getAllDocuments(): Promise<SelectDocument[]> {
+    return db.select().from(documentsTable);
+}
+
+/**
+ * Retrieves all relations from the database.
+ * @returns An array of all relations.
+ */
+export async function getAllRelations(): Promise<SelectRelation[]> {
+    return db.select().from(relationsTable);
+}
+
+/**
  * Merges two entities by moving all relations from the loser to the winner and deleting the loser.
  * @param winnerId The ID of the entity to keep.
  * @param loserId The ID of the entity to merge into the winner and delete.

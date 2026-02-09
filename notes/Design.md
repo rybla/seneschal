@@ -56,3 +56,12 @@ The system can also take autonomous action on behalf of the user. In particular:
 - Invoice Checker: Checks that invoices are paid by cross-checking bank statements with invoices.
 - Non-compete Checker: Checks for conflicts between current contracts and potential work offers.
 
+## Frontend
+
+The frontend is a single page application. The main view is a dashboard with the following sections:
+
+- A search bar to query the knowledge graph (using the `/api/query` endpoint). Upon success, the structured results are rendered below the search bar in a structured way that allows the user to explore the knowledge graph interactively.
+- A list of documents that have been uploaded to the system. This list is updated in real-time as documents are uploaded.
+- A list of entities that have been extracted from the documents. This list is updated in real-time as documents are uploaded.
+- A list of relations that have been extracted from the documents. This list is updated in real-time as documents are uploaded.
+- A list of workflows that can be run on the system. Each workflow, when clicked, opens a modal that allows the user to enter the parameters of the workflow and a submit button to run the workflow.

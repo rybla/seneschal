@@ -203,6 +203,36 @@ const routes = app
             return c.json({ error: "Query failed" }, 500);
         }
     })
+    .get("/documents", async (c) => {
+        const { getAllDocuments } = await import("@/db/query");
+        try {
+            const documents = await getAllDocuments();
+            return c.json(documents);
+        } catch (e) {
+            console.error("Failed to fetch documents", e);
+            return c.json({ error: "Failed to fetch documents" }, 500);
+        }
+    })
+    .get("/entities", async (c) => {
+        const { getAllEntities } = await import("@/db/query");
+        try {
+            const entities = await getAllEntities();
+            return c.json(entities);
+        } catch (e) {
+            console.error("Failed to fetch entities", e);
+            return c.json({ error: "Failed to fetch entities" }, 500);
+        }
+    })
+    .get("/relations", async (c) => {
+        const { getAllRelations } = await import("@/db/query");
+        try {
+            const relations = await getAllRelations();
+            return c.json(relations);
+        } catch (e) {
+            console.error("Failed to fetch relations", e);
+            return c.json({ error: "Failed to fetch relations" }, 500);
+        }
+    })
 
 // -----------------------------------------------------------------------------
 
