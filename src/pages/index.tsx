@@ -1,14 +1,14 @@
 import { app_name } from "@/constants";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./Home.css";
+import "./index.css";
 
 // -----------------------------------------------------------------------------
 
 const elem = document.getElementById("root")!;
 const app = (
     <StrictMode>
-        <Home />
+        <App />
     </StrictMode>
 );
 
@@ -23,10 +23,10 @@ if (import.meta.hot) {
 
 // -----------------------------------------------------------------------------
 
-export default function Home() {
+export default function App() {
     return (
-        <div className="home">
-            <div className="title">{app_name}</div>
+        <div className="app">
+            <div className="app-title">{app_name}</div>
             {/* TODO: implement app */}
         </div>
     );

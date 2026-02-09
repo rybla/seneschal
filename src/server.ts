@@ -26,7 +26,8 @@ const routes = app
 
 // -----------------------------------------------------------------------------
 
-app.get("*", serveStatic({ root: "./static" }))
+// Serve static files from the dist directory.
+app.get("*", serveStatic({ root: "./dist" }))
 
 // -----------------------------------------------------------------------------
 

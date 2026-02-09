@@ -37,14 +37,26 @@ validate_end:
 
 validate: validate_begin lint typecheck test validate_end
 
+clean_build:
+    @echo
+    @echo "Cleaning build directory..."
+    rm -rf ./dist
+    @echo "Successfully cleaned build directory."
+
+build: validate clean_build
+    @echo
+    @echo "Bundling pages..."
+    bun build ./src/pages/*.html --outdir ./dist
+    @echo "Successfully bundled pages."
+
 # Start a development server.
-start_development_server: validate
-    bun --hot src/index.ts
+start_development_server: build
+    bun --hot src/server.ts
 
 dev: start_development_server
 
 # Start a production server.
-start_production_server:
-    NODE_ENV=production bun src/index.ts
+start_production_server: build
+    NODE_ENV=production bun src/server.ts
 
 prod: start_production_server
