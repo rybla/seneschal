@@ -22,3 +22,6 @@ The database will be a SQLite database. The schema will be defined using Drizzle
 - Database schema definitions are in `src/db/schema.ts`
 - Database queries are in `src/db/query.ts`
 
+## Frontend
+
+The frontend is a collection of single-page React applications. Each page has an entrypoint HTML page in `./src/pages/`. The entrypoint HTML page is used to load the React application and its styles. The React application is bundled and served as static assets.
