@@ -1,6 +1,9 @@
 import { Ollama } from "ollama";
+import env from "@/env";
 
-const ollama = new Ollama();
+const ollama = new Ollama({
+  headers: { Authorization: "Bearer " + env.OLLAMA_API_KEY },
+});
 
 export async function chat(args: { prompt: string }) {
   const response = await ollama.chat({

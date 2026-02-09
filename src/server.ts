@@ -322,6 +322,7 @@ const routes = app
       "json",
       z.object({
         query: z.string(),
+        privacy_level: z.enum(["PUBLIC", "PRIVATE"]),
       }),
     ),
     async (c) => {
