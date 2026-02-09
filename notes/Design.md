@@ -35,7 +35,7 @@ The system is private since it builds this relational index and queries it only 
 3. System extracts entities and relations from the text
 4. System stores the document and its extracted information in the database
 
-## Autonomous Action
+## Autonomous Actions
 
 The system can also take autonomous action on behalf of the user. In particular:
 
