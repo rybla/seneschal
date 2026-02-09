@@ -35,7 +35,7 @@ export const CompanyRevenueSchema = z.object({
 export async function searchCompanyRevenue(companyName: string, year: string): Promise<CompanyRevenue> {
     const response = await client.search({
         query: `What is ${companyName}'s ${year} revenue?`,
-        depth: 'deep',
+        depth: "standard",
         outputType: 'structured',
         structuredOutputSchema: toJsonSchema(CompanyRevenueSchema)
     });
