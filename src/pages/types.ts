@@ -1,12 +1,14 @@
+import type { JSONValue } from "hono/utils/types";
+
 export interface Document {
   id: number;
   path: string;
-  title: string;
-  content: string;
+  title: string | null;
+  content: string | null;
   securityLevel: string;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
+  metadata: JSONValue;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface Entity {
@@ -15,9 +17,7 @@ export interface Entity {
   type: string;
   description: string | null;
   sourceDocumentId: number | null;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
+  metadata: JSONValue;
 }
 
 export interface Relation {
@@ -27,9 +27,7 @@ export interface Relation {
   type: string;
   description: string | null;
   sourceDocumentId: number | null;
-  properties: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
+  properties: JSONValue;
 }
 
 export interface GraphNode {
@@ -54,11 +52,13 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
-export interface MergeResult {
-  success: boolean;
-  mergedCount: number;
-  mergedPairs: Array<{ winner: string; loser: string }>;
-}
+export type MergeResult =
+  | {
+      success: boolean;
+      mergedCount: number;
+      mergedPairs: Array<{ winner: string; loser: string }>;
+    }
+  | { message: string };
 
 export interface SaturateResult {
   success: boolean;

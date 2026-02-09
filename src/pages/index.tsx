@@ -221,8 +221,10 @@ function DataLists() {
             <li key={doc.id} className="list-item">
               <h4>{doc.title}</h4>
               <span>
-                {new Date(doc.createdAt).toLocaleDateString()} •{" "}
-                {doc.securityLevel}
+                {doc.createdAt
+                  ? new Date(doc.createdAt).toLocaleDateString()
+                  : "N/A"}{" "}
+                • {doc.securityLevel}
               </span>
             </li>
           ))}
@@ -343,8 +345,11 @@ function WorkflowSection() {
 
     try {
       const result = await mergeNodes();
-
-      alert(`Merged ${result.mergedCount} pairs successfully.`);
+      if ("mergedCount" in result) {
+        alert(`Merged ${result.mergedCount} pairs successfully.`);
+      } else {
+        alert(result.message);
+      }
     } catch {
       alert("Merge failed");
     } finally {
