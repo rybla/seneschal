@@ -15,6 +15,7 @@ import {
 import type {
   Document,
   Entity,
+  GraphData,
   GraphEdge,
   GraphNode,
   PrivacyLevel,
@@ -107,6 +108,11 @@ function SearchSection() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<QueryResponse | null>(null);
+  const [fullGraphData, setFullGraphData] = useState<GraphData | null>(null);
+  const [highlightedQuery, setHighlightedQuery] = useState<{
+    nodeIds: Set<number>;
+    edgeIds: Set<number>;
+  } | null>(null);
   const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>("PRIVATE");
 
   useEffect(() => {
@@ -126,6 +132,7 @@ function SearchSection() {
             target: r.targetEntityId,
           })),
         };
+        setFullGraphData(graphData);
         setData({
           graphData,
           answer: "Showing the full knowledge graph.",
@@ -146,7 +153,19 @@ function SearchSection() {
     setLoading(true);
     try {
       const result = await queryGraph(query, privacyLevel);
-      setData(result);
+      if (result.graphData && fullGraphData) {
+        const nodeIds = new Set(result.graphData.nodes.map((n) => n.id));
+        const edgeIds = new Set(result.graphData.edges.map((e) => e.id));
+        setHighlightedQuery({ nodeIds, edgeIds });
+        setData({
+          graphData: fullGraphData, // Keep full graph context
+          answer: result.answer || "Query completed.",
+        });
+      } else {
+        // Fallback or empty result
+        setData(result);
+        setHighlightedQuery(null);
+      }
     } catch (err) {
       console.error(err);
       alert("Search failed: " + err);
@@ -163,6 +182,13 @@ function SearchSection() {
       ctx: CanvasRenderingContext2D,
       globalScale: number,
     ) => {
+      const isDimmed =
+        highlightedQuery && !highlightedQuery.nodeIds.has(node.id);
+      const alpha = isDimmed ? 0.2 : 1;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
       const label = node.name;
       const fontSize = 12 / globalScale;
       ctx.font = `${fontSize}px Sans-Serif`;
@@ -186,11 +212,22 @@ function SearchSection() {
 
       ctx.beginPath();
       ctx.arc(node.x ?? 0, node.y ?? 0, 6, 0, 2 * Math.PI, false);
-      ctx.fillStyle = "#6366f1"; // primary color (indigo-500)
+      ctx.fillStyle = isDimmed ? "#4b5563" : "#6366f1"; // Gray if dimmed, else primary
 
       ctx.fill();
+      ctx.restore();
     },
-    [],
+    [highlightedQuery],
+  );
+
+  const getLinkColor = useCallback(
+    (link: GraphEdge) => {
+      if (!highlightedQuery) return "rgba(255, 255, 255, 0.3)";
+      return highlightedQuery.edgeIds.has(link.id)
+        ? "rgba(255, 255, 255, 0.8)" // Bright for highlighted
+        : "rgba(255, 255, 255, 0.05)"; // Dimmed for others
+    },
+    [highlightedQuery],
   );
 
   return (
@@ -278,7 +315,7 @@ function SearchSection() {
                   }
                   linkLabel={(link: GraphEdge) => link.type}
                   backgroundColor="rgba(0,0,0,0)"
-                  linkColor={() => "rgba(255, 255, 255, 0.3)"}
+                  linkColor={getLinkColor}
                   linkDirectionalArrowLength={3.5}
                   linkDirectionalArrowRelPos={1}
                   nodeCanvasObject={nodeCanvasObject}
