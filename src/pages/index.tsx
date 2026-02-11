@@ -184,12 +184,13 @@ function SearchSection() {
 
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = "var(--text-main)";
-      ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + 10);
+      ctx.fillStyle = "#ffffff"; // visible white text
+      ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + 12);
 
       ctx.beginPath();
-      ctx.arc(node.x ?? 0, node.y ?? 0, 4, 0, 2 * Math.PI, false);
-      ctx.fillStyle = "rgba(99, 102, 241, 0.5)";
+      ctx.arc(node.x ?? 0, node.y ?? 0, 6, 0, 2 * Math.PI, false);
+      ctx.fillStyle = "#6366f1"; // primary color (indigo-500)
+
       ctx.fill();
     },
     [],
@@ -267,23 +268,25 @@ function SearchSection() {
             </div>
           ) : (
             <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
-              <ForceGraph2D
-                width={width}
-                height={height}
-                graphData={{
-                  nodes: data.graphData.nodes,
-                  links: data.graphData.edges,
-                }}
-                nodeLabel={(node: ForceGraphNode) =>
-                  `${node.name} (${node.type})`
-                }
-                linkLabel={(link: GraphEdge) => link.type}
-                backgroundColor="var(--background)"
-                linkColor={() => "rgba(128, 128, 128, 0.5)"}
-                linkDirectionalArrowLength={3.5}
-                linkDirectionalArrowRelPos={1}
-                nodeCanvasObject={nodeCanvasObject}
-              />
+              {width > 0 && height > 0 && (
+                <ForceGraph2D
+                  width={width}
+                  height={height}
+                  graphData={{
+                    nodes: data.graphData.nodes,
+                    links: data.graphData.edges,
+                  }}
+                  nodeLabel={(node: ForceGraphNode) =>
+                    `${node.name} (${node.type})`
+                  }
+                  linkLabel={(link: GraphEdge) => link.type}
+                  backgroundColor="rgba(0,0,0,0)"
+                  linkColor={() => "rgba(255, 255, 255, 0.3)"}
+                  linkDirectionalArrowLength={3.5}
+                  linkDirectionalArrowRelPos={1}
+                  nodeCanvasObject={nodeCanvasObject}
+                />
+              )}
             </div>
           )}
         </Card>
