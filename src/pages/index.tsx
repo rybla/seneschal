@@ -1,24 +1,25 @@
-import React, { useState, useEffect, type FormEvent, useCallback } from "react";
-import { createRoot } from "react-dom/client";
+import React, { useCallback, useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 import ForceGraph2D from "react-force-graph-2d";
+import Markdown from "react-markdown";
 import {
   fetchDocuments,
   fetchEntities,
   fetchRelations,
-  uploadDocument,
   mergeNodes,
   queryGraph,
   saturateDatabase,
+  uploadDocument,
 } from "./api";
 import type {
   Document,
   Entity,
-  Relation,
-  QueryResponse,
-  PrivacyLevel,
-  GraphNode,
   GraphEdge,
+  GraphNode,
+  PrivacyLevel,
+  QueryResponse,
+  Relation,
 } from "./types";
 
 // --- Components ---
@@ -252,7 +253,7 @@ function SearchSection() {
       {data && (
         <Card className="answer-card">
           <h4>Synthesized Answer</h4>
-          <p>{data.answer}</p>
+          <Markdown>{data.answer}</Markdown>
         </Card>
       )}
 
