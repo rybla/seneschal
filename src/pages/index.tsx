@@ -1,7 +1,14 @@
-import React, { useCallback, useEffect, useState, type FormEvent } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { forceRadial } from "d3-force";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
-import ForceGraph2D from "react-force-graph-2d";
+import ForceGraph2D, { type ForceGraphMethods } from "react-force-graph-2d";
 import Markdown from "react-markdown";
 import {
   fetchDocuments,
@@ -393,6 +400,20 @@ function SearchSection() {
     [highlightedQuery],
   );
 
+  const fgRef = useRef<
+    ForceGraphMethods<ForceGraphNode, GraphEdge> | undefined
+  >(undefined);
+
+  useEffect(() => {
+    const fg = fgRef.current;
+    if (fg) {
+      fg.d3Force("charge")?.strength(-10);
+      fg.d3Force("link")?.distance(20);
+      fg.d3Force("radial", forceRadial(0, 0, 0).strength(0.1));
+      fg.d3Force("charge")?.strength(-50);
+    }
+  }, [width, height]);
+
   return (
     <section className="search-section">
       <h2>Knowledge Graph Explorer</h2>
@@ -476,6 +497,7 @@ function SearchSection() {
             <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
               {width > 0 && height > 0 && (
                 <ForceGraph2D
+                  ref={fgRef}
                   width={width}
                   height={height}
                   graphData={{
@@ -491,6 +513,8 @@ function SearchSection() {
                   linkDirectionalArrowLength={3.5}
                   linkDirectionalArrowRelPos={1}
                   nodeCanvasObject={nodeCanvasObject}
+                  // cooldownTicks={50}
+                  onEngineStop={() => fgRef.current?.zoomToFit(400)}
                 />
               )}
             </div>
