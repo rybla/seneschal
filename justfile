@@ -55,9 +55,9 @@ validate_end:
 
 create_changelog_entry:
     @echo
-    @echo "Now you must create a changelog entry to log your changes. To do so, create a file in the `./changelogs/` directory with the name `$(date +"%Y-%m-%d-%H-%M-%S") - <label>.md`, where `<label>` is a short phrase as a label for your changelog entry. The file should contain an overview of your changes, including short code snippets."
-    @echo "Once you have created the changelog entry, use `git` to commit your changes like so: `git add -A ; git commit -m \"<label>"` where label is the label you used for your changelog entry."
-
+    @echo "Now you must create a changelog entry to log your changes. To do so, create a file in the \"./changelogs/\" directory with the name \"$(date +"%Y-%m-%d-%H-%M-%S") - <label>.md\", where <label> is a short phrase that serves as a label for your changelog entry. The file should contain an overview of your changes, including short code snippets."
+    @echo
+    @echo "Once you have created the changelog entry, use \"git\" to commit all of your changes like so:\n\n    git add -A ; git commit -m \"<label>\"\n\nwhere label is the label you used for your changelog entry."
 
 validate_ncl: validate_begin lint typecheck test build test_start_development_server validate_end
 
