@@ -24,7 +24,7 @@ typecheck: install_dependencies
 test:
     @echo
     @echo "Running tests..."
-    bun test
+    bun --env-file=.env.test test
     @echo "Successfully ran tests."
 
 clean_build:
@@ -58,6 +58,8 @@ create_changelog_entry:
     @read -p "Enter a short phrase as a label for your changelog entry: " label ; read -p "Enter a 1-paragraph description of the changes: " content ; echo "## $label\n\n$content\n" > "./changelogs/$(date +"%Y-%m-%d-%H-%M-%S") - $label.md" ; git add -A ; git commit -m "$label: $content"
     @echo "Successfully created new changelog entry."
 
+validate_ncl: validate_begin lint typecheck test build test_start_development_server validate_end
+
 validate: validate_begin lint typecheck test build test_start_development_server validate_end create_changelog_entry
 
 # Start a development server.
@@ -65,9 +67,3 @@ start_development_server:
     bun --hot src/server.ts
 
 dev: start_development_server
-
-# Start a production server.
-start_production_server:
-    NODE_ENV=production bun src/server.ts
-
-prod: start_production_server

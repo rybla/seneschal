@@ -21,6 +21,11 @@ import z from "zod";
 import { logger } from "hono/logger";
 import { ingestText } from "./ingestion";
 import { generateLinkupQuery } from "./saturation";
+import { runMigrations } from "./db/migration";
+
+// -----------------------------------------------------------------------------
+
+await runMigrations();
 
 // -----------------------------------------------------------------------------
 
