@@ -1,7 +1,7 @@
 import env from "@/env";
 import { GoogleGenAI } from "@google/genai";
 import { Ollama } from "ollama";
-import type { PrivacyLevel } from "./types";
+import type { PrivacyLevel } from "./common";
 
 const ai = new GoogleGenAI({
   apiKey: env.GEMINI_API_KEY,

@@ -1,3 +1,4 @@
+import type { DocumentType, PrivacyLevel } from "@/common";
 import {
   createDocument,
   createEntity,
@@ -5,13 +6,12 @@ import {
   findEntitiesByNames,
   updateDocument,
 } from "@/db/query";
-import type { DocumentType, SelectDocument } from "@/db/schema";
+import type { SelectDocument } from "@/db/schema";
 import {
   classifyDocument,
   extractEntitiesAndRelations,
   extractStructuredMetadata,
 } from "@/llm";
-import type { PrivacyLevel } from "@/types";
 
 export async function ingestText(
   content: string,

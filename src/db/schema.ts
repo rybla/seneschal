@@ -1,3 +1,4 @@
+import { PRIVACY_LEVELS, SOURCE_TYPES } from "@/common";
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
@@ -10,10 +11,10 @@ export const documentsTable = sqliteTable("documents", {
   content: text("content"), // Extracted text content or summary
   type: text("type").notNull().default("GENERIC"), // e.g. "INVOICE", "BANK_STATEMENT", "CONTRACT"
   securityLevel: text("security_level").notNull().default("standard"), // Clearance level: "standard", "sensitive", etc.
-  privacyLevel: text("privacy_level", { enum: ["PUBLIC", "PRIVATE"] })
+  privacyLevel: text("privacy_level", { enum: PRIVACY_LEVELS })
     .notNull()
     .default("PRIVATE"),
-  sourceType: text("source_type", { enum: ["USER", "SEARCH"] })
+  sourceType: text("source_type", { enum: SOURCE_TYPES })
     .notNull()
     .default("USER"),
   lastIndexedAt: integer("last_indexed_at", { mode: "timestamp" }),
@@ -25,21 +26,6 @@ export const documentsTable = sqliteTable("documents", {
   ),
   metadata: text("metadata", { mode: "json" }), // Type-specific structured data (see DocumentMetadataByType)
 });
-
-/** Document types. SLACK_MESSAGE used by Scope Checker for intercepted employer messages. */
-export const DOCUMENT_TYPES = {
-  GENERIC: "GENERIC",
-  INVOICE: "INVOICE",
-  BANK_STATEMENT: "BANK_STATEMENT",
-  CONTRACT: "CONTRACT",
-  SOW: "SOW",
-  NDA: "NDA",
-  OFFER: "OFFER",
-  RECEIPT: "RECEIPT",
-  SLACK_MESSAGE: "SLACK_MESSAGE",
-} as const;
-
-export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
 
 /** Structured metadata for INVOICE (Invoice Checker: cross-check with bank statements). */
 export interface InvoiceMetadata {
@@ -111,10 +97,10 @@ export const entitiesTable = sqliteTable("entities", {
   name: text("name").notNull(),
   type: text("type").notNull(), // Use ENTITY_TYPES
   description: text("description"),
-  privacyLevel: text("privacy_level", { enum: ["PUBLIC", "PRIVATE"] })
+  privacyLevel: text("privacy_level", { enum: PRIVACY_LEVELS })
     .notNull()
     .default("PRIVATE"),
-  sourceType: text("source_type", { enum: ["USER", "SEARCH"] })
+  sourceType: text("source_type", { enum: SOURCE_TYPES })
     .notNull()
     .default("USER"),
   sourceDocumentId: integer("source_document_id").references(
@@ -122,31 +108,6 @@ export const entitiesTable = sqliteTable("entities", {
   ),
   metadata: text("metadata", { mode: "json" }), // e.g. amount, date for AMOUNT/DATE/BANK_TRANSACTION
 });
-
-/** Entity types for autonomous actions: Scope (SOW/deliverables), Invoice (invoices/transactions), Non-compete (contracts/offers). */
-export const ENTITY_TYPES = {
-  PERSON: "PERSON",
-  COMPANY: "COMPANY",
-  PARTY: "PARTY",
-  CONTRACT: "CONTRACT",
-  SOW: "SOW",
-  CLAUSE: "CLAUSE",
-  INVOICE: "INVOICE",
-  INVOICE_NUMBER: "INVOICE_NUMBER",
-  BANK_TRANSACTION: "BANK_TRANSACTION",
-  AMOUNT: "AMOUNT",
-  DATE: "DATE",
-  DELIVERABLE: "DELIVERABLE",
-  PAYMENT_TERM: "PAYMENT_TERM",
-  OFFER: "OFFER",
-  INDUSTRY: "INDUSTRY",
-  VENDOR: "VENDOR",
-  PAYEE: "PAYEE",
-  ROLE_OR_SERVICE: "ROLE_OR_SERVICE",
-  SLACK_MESSAGE: "SLACK_MESSAGE", // Requested work from employer (Scope Checker)
-} as const;
-
-export type EntityType = (typeof ENTITY_TYPES)[keyof typeof ENTITY_TYPES];
 
 export type InsertEntity = typeof entitiesTable.$inferInsert;
 export type SelectEntity = typeof entitiesTable.$inferSelect;
@@ -162,10 +123,10 @@ export const relationsTable = sqliteTable("relations", {
     .references(() => entitiesTable.id),
   type: text("type").notNull(), // Use RELATION_TYPES
   description: text("description"),
-  privacyLevel: text("privacy_level", { enum: ["PUBLIC", "PRIVATE"] })
+  privacyLevel: text("privacy_level", { enum: PRIVACY_LEVELS })
     .notNull()
     .default("PRIVATE"),
-  sourceType: text("source_type", { enum: ["USER", "SEARCH"] })
+  sourceType: text("source_type", { enum: SOURCE_TYPES })
     .notNull()
     .default("USER"),
   sourceDocumentId: integer("source_document_id").references(
@@ -173,36 +134,6 @@ export const relationsTable = sqliteTable("relations", {
   ),
   properties: text("properties", { mode: "json" }), // e.g. amount, date for PAID_BY
 });
-
-/** Relation types for autonomous actions. */
-export const RELATION_TYPES = {
-  // General (Design doc)
-  WORKS_AT: "WORKS_AT",
-  SIGNED: "SIGNED",
-  RESTRICTS: "RESTRICTS",
-  CONTAINS: "CONTAINS",
-  EXPIRES_ON: "EXPIRES_ON",
-  SUBSIDIARY_OF: "SUBSIDIARY_OF",
-  // Invoice Checker: link invoices to bank transactions
-  ISSUED_BY: "ISSUED_BY",
-  PAYABLE_TO: "PAYABLE_TO",
-  AMOUNT_OF: "AMOUNT_OF",
-  DUE_DATE: "DUE_DATE",
-  PAID_BY: "PAID_BY", // bank transaction paid this invoice
-  MATCHES_TRANSACTION: "MATCHES_TRANSACTION", // invoice matches bank transaction
-  // SOW / Scope Checker: deliverables and scope
-  PARTY_TO: "PARTY_TO",
-  DELIVERABLE_OF: "DELIVERABLE_OF",
-  IN_SCOPE: "IN_SCOPE",
-  PAYMENT_TERMS_OF: "PAYMENT_TERMS_OF",
-  // Non-compete Checker: restrictions and conflicts
-  RESTRICTS_INDUSTRY: "RESTRICTS_INDUSTRY",
-  RESTRICTS_COMPANY: "RESTRICTS_COMPANY",
-  CONFLICTS_WITH: "CONFLICTS_WITH",
-  EFFECTIVE_UNTIL: "EFFECTIVE_UNTIL",
-} as const;
-
-export type RelationType = (typeof RELATION_TYPES)[keyof typeof RELATION_TYPES];
 
 export type InsertRelation = typeof relationsTable.$inferInsert;
 export type SelectRelation = typeof relationsTable.$inferSelect;

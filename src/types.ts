@@ -1,5 +1,3 @@
-export type PrivacyLevel = "PUBLIC" | "PRIVATE";
-
 /**
  * Represents a node in the knowledge graph.
  */
