@@ -54,6 +54,21 @@ The system is private since it builds this relational index and queries it only 
 3. System queries the knowledge graph for all relevant information within a certain radius of the query entities (in terms of graph distance)
 4. System generates a structured response that summarizes all the information, so it can be rendered in the UI with a certain degree of interactivity and structured formatting.
 
+## Privacy Levels
+
+There are two privacy levels:
+- Private
+- Public
+
+Private is considered a higher privacy level than Public.
+
+- When the user uploads a document, they assign it a privacy level. All entities and relations that are extracted from the document are assigned the same privacy level.
+- If a document ingestion inserts an entity or relation that is already in the database, then the highest privacy level is inherited. 
+- When entities are merge, the resulting node is assigned the highest privacy level of the nodes that were merged.
+- When a user submits a query, the query is indicated as either Public or Private. 
+    - If the query is Public, then the query is ONLY allowed to access Public entities and relations. The backend will also use a more powerful LLM (via the Google Gemini API) to analyze the results of querying the knowledge graph.
+    - If the query is Private, then the query is allowed to access both Public and Private entities and relations. The backend will use a local LLM (via Ollama) to analyze the results of querying the knowledge graph.
+
 ## Autonomous Actions
 
 The system can also take autonomous action on behalf of the user. In particular:
