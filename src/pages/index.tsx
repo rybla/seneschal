@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  type FormEvent,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useState, useEffect, type FormEvent, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import ForceGraph2D from "react-force-graph-2d";
 import {
@@ -79,11 +73,11 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 function useElementSize<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
+  const [ref, setRef] = useState<T | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref) return;
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
@@ -91,11 +85,12 @@ function useElementSize<T extends HTMLElement>() {
         setSize({ width, height });
       }
     });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
 
-  return { ref, width: size.width, height: size.height };
+    observer.observe(ref);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return { ref: setRef, width: size.width, height: size.height };
 }
 
 // --- Sections ---
@@ -159,6 +154,10 @@ function SearchSection() {
   };
 
   const { ref: containerRef, width, height } = useElementSize<HTMLDivElement>();
+
+  useEffect(() => {
+    console.log(width, height);
+  }, [width, height]);
 
   const nodeCanvasObject = useCallback(
     (
