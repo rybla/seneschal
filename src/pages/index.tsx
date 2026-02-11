@@ -40,14 +40,17 @@ function Button({
   children,
   variant = "primary",
   disabled = false,
+  type = "submit",
 }: {
   onClick?: () => void;
   children: React.ReactNode;
   variant?: "primary" | "secondary";
   disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 }) {
   return (
     <button
+      type={type}
       className={`btn ${variant === "secondary" ? "secondary" : ""}`}
       onClick={onClick}
       disabled={disabled}
@@ -254,6 +257,15 @@ function SearchSection() {
           <Button disabled={loading}>
             {loading ? "Searching..." : "Search"}
           </Button>
+          {highlightedQuery && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setHighlightedQuery(null)}
+            >
+              Reset
+            </Button>
+          )}
         </div>
         <div
           style={{
