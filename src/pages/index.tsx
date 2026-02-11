@@ -1,4 +1,10 @@
-import React, { useState, useEffect, type FormEvent, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  type FormEvent,
+  useCallback,
+  useRef,
+} from "react";
 import { createRoot } from "react-dom/client";
 import ForceGraph2D from "react-force-graph-2d";
 import {
@@ -17,6 +23,7 @@ import type {
   QueryResponse,
   PrivacyLevel,
   GraphNode,
+  GraphEdge,
 } from "./types";
 
 // --- Components ---
@@ -69,6 +76,26 @@ function Badge({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
+}
+
+function useElementSize<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+        setSize({ width, height });
+      }
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, width: size.width, height: size.height };
 }
 
 // --- Sections ---
@@ -131,6 +158,8 @@ function SearchSection() {
     }
   };
 
+  const { ref: containerRef, width, height } = useElementSize<HTMLDivElement>();
+
   const nodeCanvasObject = useCallback(
     (
       node: ForceGraphNode,
@@ -167,7 +196,7 @@ function SearchSection() {
   );
 
   return (
-    <section>
+    <section className="search-section">
       <h2>Knowledge Graph Explorer</h2>
       <form
         onSubmit={handleSearch}
@@ -237,20 +266,25 @@ function SearchSection() {
               <p>No results found for your query.</p>
             </div>
           ) : (
-            <ForceGraph2D
-              graphData={{
-                nodes: data.graphData.nodes,
-                links: data.graphData.edges,
-              }}
-              nodeLabel={(node) => `${node.name} (${node.type})`}
-              linkLabel={(link) => link.type}
-              backgroundColor="var(--background)"
-              linkColor={() => "rgba(128, 128, 128, 0.5)"}
-              linkDirectionalArrowLength={3.5}
-              linkDirectionalArrowRelPos={1}
-              nodeCanvasObject={nodeCanvasObject}
-              height={500}
-            />
+            <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+              <ForceGraph2D
+                width={width}
+                height={height}
+                graphData={{
+                  nodes: data.graphData.nodes,
+                  links: data.graphData.edges,
+                }}
+                nodeLabel={(node: ForceGraphNode) =>
+                  `${node.name} (${node.type})`
+                }
+                linkLabel={(link: GraphEdge) => link.type}
+                backgroundColor="var(--background)"
+                linkColor={() => "rgba(128, 128, 128, 0.5)"}
+                linkDirectionalArrowLength={3.5}
+                linkDirectionalArrowRelPos={1}
+                nodeCanvasObject={nodeCanvasObject}
+              />
+            </div>
           )}
         </Card>
       ) : (

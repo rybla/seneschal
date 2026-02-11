@@ -295,8 +295,12 @@ input:focus {
 }
 
 /* Graph Visualization Placeholder */
+/* Graph Visualization Placeholder & Container */
 .graph-viz {
-  height: 400px;
+  /* Removed fixed height to allow flex growth */
+  flex: 1;
+  min-height: 400px;
+  /* Minimum height constraint */
   background: rgba(0, 0, 0, 0.3);
   border-radius: 16px;
   display: flex;
@@ -304,6 +308,16 @@ input:focus {
   align-items: center;
   border: 1px dashed var(--card-border);
   color: var(--text-muted);
+  overflow: hidden;
+  /* Ensure graph doesn't overflow rounded corners */
+}
+
+/* Search Section Layout */
+.search-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1.5rem;
 }
 
 /* Tabs */
