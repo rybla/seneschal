@@ -70,11 +70,15 @@ const routes = app
       // Extract text
 
       let textContent: string;
-      try {
-        textContent = await pdf.extractTextFromPdf(bufferNode);
-      } catch (e) {
-        console.error("Failed to extract text from PDF", e);
-        return c.json({ error: "Failed to parse PDF" }, 500);
+      if (file.name.toLowerCase().endsWith(".pdf")) {
+        try {
+          textContent = await pdf.extractTextFromPdf(bufferNode);
+        } catch (e) {
+          console.error("Failed to extract text from PDF", e);
+          return c.json({ error: "Failed to parse PDF" }, 500);
+        }
+      } else {
+        textContent = bufferNode.toString("utf-8");
       }
 
       try {
@@ -231,14 +235,17 @@ const routes = app
           return c.json({ nodes: [], edges: [] });
         }
 
-        const resolvedEntities = await findEntitiesByNames(entities);
+        const resolvedEntities = await findEntitiesByNames(
+          entities,
+          privacy_level,
+        );
         const ids = resolvedEntities.map((e) => e.id);
 
         if (ids.length === 0) {
           return c.json({ nodes: [], edges: [] });
         }
 
-        const graphData = await getGraphContext(ids, 2); // Depth 2
+        const graphData = await getGraphContext(ids, 2, privacy_level); // Depth 2
 
         if (graphData.nodes.length === 0) {
           return c.json({

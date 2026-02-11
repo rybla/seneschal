@@ -17,6 +17,7 @@ import {
 } from "@/db/schema";
 import { eq, inArray, or, notInArray, and, sql, count } from "drizzle-orm";
 import type { GraphData, Node, Edge } from "@/types";
+import type { PrivacyLevel } from "@/common";
 
 /**
  * Creates a new document in the database.
@@ -76,6 +77,22 @@ export async function createEntity(data: InsertEntity): Promise<SelectEntity> {
 }
 
 /**
+ * Updates an entity.
+ */
+export async function updateEntity(
+  id: number,
+  data: Partial<InsertEntity>,
+): Promise<SelectEntity> {
+  const [entity] = await db
+    .update(entitiesTable)
+    .set(data)
+    .where(eq(entitiesTable.id, id))
+    .returning();
+  if (!entity) throw new Error("Failed to update entity");
+  return entity;
+}
+
+/**
  * Creates a new relation in the database.
  * @param data The relation data to insert.
  * @returns The created relation.
@@ -86,6 +103,39 @@ export async function createRelation(
   const [relation] = await db.insert(relationsTable).values(data).returning();
   if (!relation) throw new Error("Failed to create relation");
   return relation;
+}
+
+/**
+ * Updates a relation.
+ */
+export async function updateRelation(
+  id: number,
+  data: Partial<InsertRelation>,
+): Promise<SelectRelation> {
+  const [relation] = await db
+    .update(relationsTable)
+    .set(data)
+    .where(eq(relationsTable.id, id))
+    .returning();
+  if (!relation) throw new Error("Failed to update relation");
+  return relation;
+}
+
+/**
+ * Finds an existing relation between two entities with a specific type.
+ */
+export async function findRelation(
+  sourceId: number,
+  targetId: number,
+  type: string,
+): Promise<SelectRelation | undefined> {
+  return db.query.relationsTable.findFirst({
+    where: and(
+      eq(relationsTable.sourceEntityId, sourceId),
+      eq(relationsTable.targetEntityId, targetId),
+      eq(relationsTable.type, type),
+    ),
+  });
 }
 
 /**
@@ -114,6 +164,7 @@ export async function getAllRelations(): Promise<SelectRelation[]> {
 
 /**
  * Merges two entities by moving all relations from the loser to the winner and deleting the loser.
+ * Also upgrades the winner's privacy level if the loser is PRIVATE.
  * @param winnerId The ID of the entity to keep.
  * @param loserId The ID of the entity to merge into the winner and delete.
  */
@@ -121,6 +172,23 @@ export async function mergeEntities(
   winnerId: number,
   loserId: number,
 ): Promise<void> {
+  // 0. Check privacy levels
+  const [winner] = await db
+    .select()
+    .from(entitiesTable)
+    .where(eq(entitiesTable.id, winnerId));
+  const [loser] = await db
+    .select()
+    .from(entitiesTable)
+    .where(eq(entitiesTable.id, loserId));
+
+  if (winner && loser) {
+    // If loser is PRIVATE and winner is PUBLIC, upgrade winner to PRIVATE
+    if (loser.privacyLevel === "PRIVATE" && winner.privacyLevel === "PUBLIC") {
+      await updateEntity(winnerId, { privacyLevel: "PRIVATE" });
+    }
+  }
+
   // 1. Update relations where the loser is the source
   await db
     .update(relationsTable)
@@ -141,24 +209,41 @@ export async function mergeEntities(
  * Retrieves the graph context (nodes and edges) starting from a set of entities.
  * @param startEntityIds The IDs of the starting entities.
  * @param depth The depth of traversal (default 1).
+ * @param privacyLevel The privacy level of the query.
  * @returns The graph data comprising relevant nodes and edges.
  */
 export async function getGraphContext(
   startEntityIds: number[],
   depth: number = 1,
+  privacyLevel: PrivacyLevel = "PRIVATE", // Default to most permissive if not specified (internal calls)
 ): Promise<GraphData> {
-  const visitedNodeIds = new Set<number>(startEntityIds);
+  let currentLevelIds: number[] = [];
   const nodesMap = new Map<number, Node>();
   const edgesMap = new Map<number, Edge>();
 
-  let currentLevelIds = [...startEntityIds];
+  // Helper to build privacy filter
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const privacyFilter = (table: any) => {
+    if (privacyLevel === "PUBLIC") {
+      return eq(table.privacyLevel, "PUBLIC");
+    }
+    return undefined; // No filter for PRIVATE (can see everything)
+  };
 
   // First, get the initial nodes
   if (startEntityIds.length > 0) {
+    const whereClause = and(
+      inArray(entitiesTable.id, startEntityIds),
+      privacyFilter(entitiesTable),
+    );
     const initialNodes = await db
       .select()
       .from(entitiesTable)
-      .where(inArray(entitiesTable.id, startEntityIds));
+      .where(whereClause);
+
+    // Reset currentLevelIds to only include those that are visible
+    currentLevelIds = initialNodes.map((n) => n.id);
+
     for (const node of initialNodes) {
       nodesMap.set(node.id, {
         id: node.id,
@@ -166,65 +251,145 @@ export async function getGraphContext(
         type: node.type,
         description: node.description,
         metadata: node.metadata,
+        privacyLevel: node.privacyLevel,
       });
     }
   }
+
+  const visitedNodeIds = new Set<number>(currentLevelIds);
 
   for (let d = 0; d < depth; d++) {
     if (currentLevelIds.length === 0) break;
 
     // Find all edges connected to current level nodes
+    const whereClause = and(
+      or(
+        inArray(relationsTable.sourceEntityId, currentLevelIds),
+        inArray(relationsTable.targetEntityId, currentLevelIds),
+      ),
+      privacyFilter(relationsTable),
+    );
+
     const relevantRelations = await db
       .select()
       .from(relationsTable)
-      .where(
-        or(
-          inArray(relationsTable.sourceEntityId, currentLevelIds),
-          inArray(relationsTable.targetEntityId, currentLevelIds),
-        ),
-      );
+      .where(whereClause);
 
     const nextLevelIds: number[] = [];
 
     for (const rel of relevantRelations) {
-      edgesMap.set(rel.id, {
-        id: rel.id,
-        source: rel.sourceEntityId,
-        target: rel.targetEntityId,
-        type: rel.type,
-        description: rel.description,
-        properties: rel.properties,
-      });
+      // Check if both ends are visible (for nodes we haven't fetched yet, we'll check later,
+      // but strictly speaking we should check if the other node is visible before adding the edge.
+      // However, we'll fetch the next level nodes with privacy filter, so if a node is hidden,
+      // it won't be added to nodesMap. We should only add edge if both nodes end up in nodesMap?
+      // Or we can blindly add edges and prune later?
+      // Better: Fetch potential next nodes, filter them, then only add edges that connect visible nodes.
+      // But that requires fetching nodes first.
+      // Let's optimisticly add edges, and then filter edges that point to missing nodes at the end?
+      // Or just let the UI handle it?
+      // For security, we should ensure we don't return edges to hidden nodes.
+      // We will perform a check on the neighbor nodes.
 
-      // Identify neighbors
-      // Check both ends. If not visited, add to next level.
-      if (!visitedNodeIds.has(rel.sourceEntityId)) {
-        visitedNodeIds.add(rel.sourceEntityId);
+      // Check if both ends are visible (for nodes we haven't fetched yet, we'll check later, (because we only put visible nodes in visitedNodeIds).
+      // If not visited, we need to verify it.
+
+      if (!visitedNodeIds.has(rel.sourceEntityId))
         nextLevelIds.push(rel.sourceEntityId);
-      }
-      if (!visitedNodeIds.has(rel.targetEntityId)) {
-        visitedNodeIds.add(rel.targetEntityId);
+      if (!visitedNodeIds.has(rel.targetEntityId))
         nextLevelIds.push(rel.targetEntityId);
-      }
+
+      // Refined approach: We will filter edges after fetching new nodes.
+      // Temporarily store them.
     }
 
-    if (nextLevelIds.length > 0) {
-      // Fetch the node details for the new neighbors
+    // Deduplicate nextLevelIds
+    const uniqueNextLevelIds = Array.from(new Set(nextLevelIds));
+
+    if (uniqueNextLevelIds.length > 0) {
+      // Fetch the node details for the new neighbors with privacy filter
+      const whereClauseNodes = and(
+        inArray(entitiesTable.id, uniqueNextLevelIds),
+        privacyFilter(entitiesTable),
+      );
+
       const newNodes = await db
         .select()
         .from(entitiesTable)
-        .where(inArray(entitiesTable.id, nextLevelIds));
+        .where(whereClauseNodes);
+
+      const visibleNewNodeIds = new Set<number>();
       for (const node of newNodes) {
+        visibleNewNodeIds.add(node.id);
+        visitedNodeIds.add(node.id);
         nodesMap.set(node.id, {
           id: node.id,
           name: node.name,
           type: node.type,
           description: node.description,
           metadata: node.metadata,
+          privacyLevel: node.privacyLevel,
         });
       }
-      currentLevelIds = nextLevelIds;
+
+      // Now add edges only if they connect two visible nodes (or if the other end is already visited/visible)
+      for (const rel of relevantRelations) {
+        const sourceVisible = visitedNodeIds.has(rel.sourceEntityId);
+        const targetVisible = visitedNodeIds.has(rel.targetEntityId);
+
+        if (sourceVisible && targetVisible) {
+          edgesMap.set(rel.id, {
+            id: rel.id,
+            source: rel.sourceEntityId,
+            target: rel.targetEntityId,
+            type: rel.type,
+            description: rel.description,
+            properties: rel.properties,
+            privacyLevel: rel.privacyLevel,
+          });
+        }
+      }
+
+      // Update currentLevelIds to only the newly found visible nodes
+      // (to continue traversal from them)
+      // Note: uniqueNextLevelIds might contain nodes we already visited if the graph has cycles,
+      // but visitedNodeIds check in the loop above prevents adding them to nextLevelIds...
+      // wait, I logic'd the nextLevelIds push slightly loosely above.
+      // Let's refine:
+
+      currentLevelIds = [];
+      for (const node of newNodes) {
+        // Only traverse from *newly* discovered nodes to avoid loops/redundancy
+        // Effectively BFS.
+        // But we need to make sure we don't re-process.
+        // The visitedNodeIds check was supposed to handle that.
+        // Actually, let's just use the `newNodes` IDs for next iteration.
+        currentLevelIds.push(node.id);
+      }
     } else {
+      // No new nodes found, but we might still have edges between existing nodes?
+      // The loop above only adds edges if they point to unvisited nodes or...
+      // wait. "If we already visited the neighbor".
+      // We need to add edges between nodes even if they are already visited.
+      // My logic for adding edges was deferred.
+
+      // If no new nodes, we still need to add the edges that were found this round
+      // which connect existing nodes.
+      for (const rel of relevantRelations) {
+        const sourceVisible = visitedNodeIds.has(rel.sourceEntityId);
+        const targetVisible = visitedNodeIds.has(rel.targetEntityId);
+
+        if (sourceVisible && targetVisible) {
+          edgesMap.set(rel.id, {
+            id: rel.id,
+            source: rel.sourceEntityId,
+            target: rel.targetEntityId,
+            type: rel.type,
+            description: rel.description,
+            properties: rel.properties,
+            privacyLevel: rel.privacyLevel,
+          });
+        }
+      }
       break;
     }
   }
@@ -265,21 +430,28 @@ export async function findCompaniesWithoutHeadquarters(): Promise<
  * @param names List of entity names to search for.
  * @returns Array of matching entities.
  */
+/**
+ * Finds entities that match any of the provided names (exact match).
+ * @param names List of entity names to search for.
+ * @param privacyLevel The privacy level of the query.
+ * @returns Array of matching entities.
+ */
 export async function findEntitiesByNames(
   names: string[],
+  privacyLevel: PrivacyLevel = "PRIVATE",
 ): Promise<SelectEntity[]> {
   if (names.length === 0) return [];
 
-  // We can also try case-insensitive or partial matching if needed,
-  // but for now let's do exact match on the list.
-  // If the names are not exact, this returns empty.
-  // The ExtractQueryEntities from Gemini should arguably be "fuzzy" or we should use ILIKE.
-  // SQLite: valid for case-insensitive if collation is set or use sql operator.
-  // For simplicity: IN array.
+  const filters = [inArray(entitiesTable.name, names)];
+
+  if (privacyLevel === "PUBLIC") {
+    filters.push(eq(entitiesTable.privacyLevel, "PUBLIC"));
+  }
+
   return db
     .select()
     .from(entitiesTable)
-    .where(inArray(entitiesTable.name, names));
+    .where(and(...filters));
 }
 
 /**

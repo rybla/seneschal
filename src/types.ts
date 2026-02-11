@@ -1,3 +1,5 @@
+import type { PrivacyLevel } from "@/common";
+
 /**
  * Represents a node in the knowledge graph.
  */
@@ -7,6 +9,7 @@ export interface Node {
   type: string;
   description?: string | null;
   metadata?: unknown;
+  privacyLevel?: PrivacyLevel;
 }
 
 /**
@@ -19,6 +22,7 @@ export interface Edge {
   type: string;
   description?: string | null;
   properties?: unknown;
+  privacyLevel?: PrivacyLevel;
 }
 
 /**
