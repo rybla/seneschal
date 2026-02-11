@@ -1,4 +1,9 @@
-import { RELATION_TYPES, type RelationType } from "./common";
+import {
+  RELATION_TYPES,
+  type RelationType,
+  PrintedEntityTypes,
+  PrintedRelationTypes,
+} from "./common";
 import type { SelectEntity } from "./db/schema";
 import z from "zod";
 
@@ -23,5 +28,18 @@ export function generateLinkupQuery(
   entity: SelectEntity,
   missingRelationTypes: RelationType[],
 ): { query: string; schema: z.ZodType<LinkupQueryStructuredResult> } | null {
-  throw new Error("Not implemented");
+  if (missingRelationTypes.length === 0) {
+    return null;
+  }
+
+  const entityTypeLabel =
+    PrintedEntityTypes[entity.type as keyof typeof PrintedEntityTypes];
+
+  const relationLabels = missingRelationTypes
+    .map((type) => PrintedRelationTypes[type])
+    .join(", ");
+
+  const query = `Find the following relations for ${entity.name} (${entityTypeLabel}): ${relationLabels}`;
+
+  return { query, schema: LinkupQueryStructuredResultSchema };
 }
