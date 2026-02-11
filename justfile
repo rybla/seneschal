@@ -54,9 +54,9 @@ validate_end:
     @echo "Successfully completed all code validation."
 
 # create_changelog_entry:
-#     @echo "Beginning to create new changlog entry"
-#     @read -p "Enter a short phrase as a label for your changlog entry: " label ; read -p "Enter a 1-paragraph description of the changes: " content ; echo "## $label\n\n$content\n" > "./changelogs/$(date +"%Y-%m-%d-%H-%M-%S") - $label.md" ; git add -A ; git commit -m "$label: $content"
-#     @echo "Successfully created new changlog entry."
+#     @echo "Beginning to create new changelog entry"
+#     @read -p "Enter a short phrase as a label for your changelog entry: " label ; read -p "Enter a 1-paragraph description of the changes: " content ; echo "## $label\n\n$content\n" > "./changelogs/$(date +"%Y-%m-%d-%H-%M-%S") - $label.md" ; git add -A ; git commit -m "$label: $content"
+#     @echo "Successfully created new changelog entry."
 
 validate: validate_begin lint typecheck test build test_start_development_server validate_end
 
