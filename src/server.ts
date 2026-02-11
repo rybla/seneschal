@@ -23,6 +23,8 @@ import { ingestText } from "./ingestion";
 import { generateLinkupQuery } from "./saturation";
 import { runMigrations } from "./db/migration";
 
+import { PRIVACY_LEVELS } from "@/common";
+
 // -----------------------------------------------------------------------------
 
 await runMigrations();
@@ -52,7 +54,7 @@ const routes = app
       "form",
       z.object({
         file: z.instanceof(File),
-        privacyLevel: z.enum(["PUBLIC", "PRIVATE"]),
+        privacyLevel: z.enum(PRIVACY_LEVELS),
       }),
     ),
     async (c) => {
@@ -215,9 +217,10 @@ const routes = app
       "json",
       z.object({
         query: z.string(),
-        privacy_level: z.enum(["PUBLIC", "PRIVATE"]),
+        privacy_level: z.enum(PRIVACY_LEVELS),
       }),
     ),
+
     async (c) => {
       const { query, privacy_level } = c.req.valid("json");
 

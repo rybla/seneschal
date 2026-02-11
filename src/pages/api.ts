@@ -7,7 +7,6 @@ import type {
   MergeResult,
   Relation,
   SaturateResult,
-  PrivacyLevel,
 } from "./types";
 
 const client = hc<AppType>("/");
@@ -30,9 +29,11 @@ export async function fetchRelations(): Promise<Relation[]> {
   return res.json();
 }
 
+import type { PrivacyLevel } from "@/common";
+
 export async function uploadDocument(
   file: File,
-  privacyLevel: "PUBLIC" | "PRIVATE",
+  privacyLevel: PrivacyLevel,
 ): Promise<{ success: boolean; documentId: number }> {
   const res = await client.api.ingest.$post({
     form: {

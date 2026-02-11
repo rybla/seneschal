@@ -54,9 +54,10 @@ validate_end:
     @echo "Successfully completed all code validation."
 
 create_changelog_entry:
-    @echo "Beginning to create new changelog entry"
-    @read -p "Enter a short phrase as a label for your changelog entry: " label ; read -p "Enter a 1-paragraph description of the changes: " content ; echo "## $label\n\n$content\n" > "./changelogs/$(date +"%Y-%m-%d-%H-%M-%S") - $label.md" ; git add -A ; git commit -m "$label: $content"
-    @echo "Successfully created new changelog entry."
+    @echo
+    @echo "Now you must create a changelog entry to log your changes. To do so, create a file in the `./changelogs/` directory with the name `$(date +"%Y-%m-%d-%H-%M-%S") - <label>.md`, where `<label>` is a short phrase as a label for your changelog entry. The file should contain an overview of your changes, including short code snippets."
+    @echo "Once you have created the changelog entry, use `git` to commit your changes like so: `git add -A ; git commit -m \"<label>"` where label is the label you used for your changelog entry."
+
 
 validate_ncl: validate_begin lint typecheck test build test_start_development_server validate_end
 

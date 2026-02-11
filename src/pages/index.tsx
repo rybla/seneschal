@@ -19,13 +19,13 @@ import {
   saturateDatabase,
   uploadDocument,
 } from "./api";
+import type { PrivacyLevel } from "@/common";
 import type {
   Document,
   Entity,
   GraphData,
   GraphEdge,
   GraphNode,
-  PrivacyLevel,
   QueryResponse,
   Relation,
 } from "./types";

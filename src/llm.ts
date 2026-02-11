@@ -1,7 +1,12 @@
 import env from "@/env";
 import { GoogleGenAI } from "@google/genai";
 import { Ollama } from "ollama";
-import type { PrivacyLevel } from "./common";
+import type { PrivacyLevel } from "@/common";
+import {
+  DOCUMENT_TYPES as VALID_DOCUMENT_TYPES,
+  ENTITY_TYPES,
+  RELATION_TYPES,
+} from "@/common";
 
 const ai = new GoogleGenAI({
   apiKey: env.GEMINI_API_KEY,
@@ -73,17 +78,7 @@ export async function extractQueryEntities(
   }
 }
 
-const VALID_DOCUMENT_TYPES = [
-  "GENERIC",
-  "INVOICE",
-  "BANK_STATEMENT",
-  "CONTRACT",
-  "SOW",
-  "NDA",
-  "OFFER",
-  "RECEIPT",
-  "SLACK_MESSAGE",
-] as const;
+// VALID_DOCUMENT_TYPES imported from @/common
 
 /**
  * Classifies the document type based on its text content.
@@ -134,11 +129,9 @@ export async function classifyDocument(
 }
 
 /** Entity types used in the knowledge graph (Scope Checker, Invoice Checker, Non-compete Checker). */
-const ENTITY_TYPE_LIST =
-  "PERSON, COMPANY, PARTY, CONTRACT, SOW, CLAUSE, INVOICE, INVOICE_NUMBER, BANK_TRANSACTION, AMOUNT, DATE, DELIVERABLE, PAYMENT_TERM, OFFER, INDUSTRY, VENDOR, PAYEE, ROLE_OR_SERVICE, SLACK_MESSAGE";
+const ENTITY_TYPE_LIST = ENTITY_TYPES.join(", ");
 /** Relation types used in the knowledge graph. */
-const RELATION_TYPE_LIST =
-  "WORKS_AT, SIGNED, RESTRICTS, CONTAINS, EXPIRES_ON, SUBSIDIARY_OF, ISSUED_BY, PAYABLE_TO, AMOUNT_OF, DUE_DATE, PAID_BY, MATCHES_TRANSACTION, PARTY_TO, DELIVERABLE_OF, IN_SCOPE, PAYMENT_TERMS_OF, RESTRICTS_INDUSTRY, RESTRICTS_COMPANY, CONFLICTS_WITH, EFFECTIVE_UNTIL";
+const RELATION_TYPE_LIST = RELATION_TYPES.join(", ");
 
 /**
  * Extracts entities and relations from a document text chunk using canonical types for autonomous actions.
