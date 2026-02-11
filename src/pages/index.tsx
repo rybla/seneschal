@@ -155,10 +155,6 @@ function SearchSection() {
 
   const { ref: containerRef, width, height } = useElementSize<HTMLDivElement>();
 
-  useEffect(() => {
-    console.log(width, height);
-  }, [width, height]);
-
   const nodeCanvasObject = useCallback(
     (
       node: ForceGraphNode,
