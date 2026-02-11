@@ -6,6 +6,7 @@ import {
   getAllEntities,
   mergeEntities,
 } from "./db/query";
+import type { EntityType } from "./common";
 import { app, type AppType } from "./server";
 
 const client = hc<AppType>("http://localhost", {
@@ -21,7 +22,7 @@ describe("Node Merging Workflow", () => {
   const timestamp = Date.now();
 
   // Better: Helper to create entities
-  async function createTestEntity(name: string, type: string) {
+  async function createTestEntity(name: string, type: EntityType) {
     const entity = await createEntity({
       name,
       type,
@@ -32,15 +33,15 @@ describe("Node Merging Workflow", () => {
   }
 
   test("Database: mergeEntities should move relations and delete loser", async () => {
-    const winner = await createTestEntity(`Winner_${timestamp}`, "TEST");
-    const loser = await createTestEntity(`Loser_${timestamp}`, "TEST");
-    const target = await createTestEntity(`Target_${timestamp}`, "TEST");
+    const winner = await createTestEntity(`Winner_${timestamp}`, "PERSON");
+    const loser = await createTestEntity(`Loser_${timestamp}`, "PERSON");
+    const target = await createTestEntity(`Target_${timestamp}`, "PERSON");
 
     // Create relation: Loser -> Target
     await createRelation({
       sourceEntityId: loser.id,
       targetEntityId: target.id,
-      type: "TEST_RELATION",
+      type: "WORKS_AT",
       description: "To be moved",
       properties: {},
     });
@@ -61,8 +62,8 @@ describe("Node Merging Workflow", () => {
   test("API: /api/merge-nodes should find and merge duplicates", async () => {
     // Create two very similar entities
     const name = `DuplicateEntity_${timestamp}`;
-    const e1 = await createTestEntity(name, "TEST_DUP");
-    const e2 = await createTestEntity(name, "TEST_DUP"); // Exact same name should match
+    const e1 = await createTestEntity(name, "PERSON");
+    const e2 = await createTestEntity(name, "PERSON"); // Exact same name should match
 
     // helper to hit the API
     const res = await client.api["merge-nodes"].$post();

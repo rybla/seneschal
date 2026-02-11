@@ -468,39 +468,98 @@ export async function findCommonRelationPatterns(
 /**
  * Finds entities that are missing common relations.
  * @param patterns A map of entity types to common relation types.
- * @returns A map where keys are entities and values are arrays of missing relation types.
+ * @returns A map where keys are entities and values are objects containing arrays of missing "in" (target) and "out" (source) relation types.
  */
 export async function findEntitiesWithMissingRelations(
   patterns: Map<EntityType, RelationType[]>,
-): Promise<Map<SelectEntity, RelationType[]>> {
-  const result = new Map<SelectEntity, RelationType[]>();
+): Promise<
+  Map<
+    SelectEntity,
+    { inRelationTypes: RelationType[]; outRelationTypes: RelationType[] }
+  >
+> {
+  const tempMap = new Map<
+    number,
+    {
+      entity: SelectEntity;
+      inRelationTypes: Set<RelationType>;
+      outRelationTypes: Set<RelationType>;
+    }
+  >();
 
   for (const [entityType, relationTypes] of patterns.entries()) {
     for (const relationType of relationTypes) {
-      // Subquery to find all entity IDs of the given type that have the relation
-      const entitiesWithRelation = db
+      // 1. Check for missing OUT (Source) relations
+      // Find entities of type entityType that are NOT source of relationType
+      const entitiesWithOutRelation = db
         .select({ id: relationsTable.sourceEntityId })
         .from(relationsTable)
         .where(eq(relationsTable.type, relationType));
 
-      // Find all entities of the given type whose IDs are not in the subquery result
-      const entitiesWithoutRelation = await db
+      const entitiesMissingOut = await db
         .select()
         .from(entitiesTable)
         .where(
           and(
             eq(entitiesTable.type, entityType),
-            notInArray(entitiesTable.id, entitiesWithRelation),
+            notInArray(entitiesTable.id, entitiesWithOutRelation),
           ),
         );
 
-      for (const entity of entitiesWithoutRelation) {
-        if (!result.has(entity)) {
-          result.set(entity, []);
+      for (const entity of entitiesMissingOut) {
+        if (!tempMap.has(entity.id)) {
+          tempMap.set(entity.id, {
+            entity,
+            inRelationTypes: new Set(),
+            outRelationTypes: new Set(),
+          });
         }
-        result.get(entity)?.push(relationType);
+        tempMap.get(entity.id)!.outRelationTypes.add(relationType);
+      }
+
+      // 2. Check for missing IN (Target) relations
+      // Find entities of type entityType that are NOT target of relationType
+      const entitiesWithInRelation = db
+        .select({ id: relationsTable.targetEntityId })
+        .from(relationsTable)
+        .where(eq(relationsTable.type, relationType));
+
+      const entitiesMissingIn = await db
+        .select()
+        .from(entitiesTable)
+        .where(
+          and(
+            eq(entitiesTable.type, entityType),
+            notInArray(entitiesTable.id, entitiesWithInRelation),
+          ),
+        );
+
+      for (const entity of entitiesMissingIn) {
+        if (!tempMap.has(entity.id)) {
+          tempMap.set(entity.id, {
+            entity,
+            inRelationTypes: new Set(),
+            outRelationTypes: new Set(),
+          });
+        }
+        tempMap.get(entity.id)!.inRelationTypes.add(relationType);
       }
     }
+  }
+
+  const result = new Map<
+    SelectEntity,
+    { inRelationTypes: RelationType[]; outRelationTypes: RelationType[] }
+  >();
+  for (const {
+    entity,
+    inRelationTypes,
+    outRelationTypes,
+  } of tempMap.values()) {
+    result.set(entity, {
+      inRelationTypes: Array.from(inRelationTypes),
+      outRelationTypes: Array.from(outRelationTypes),
+    });
   }
 
   return result;

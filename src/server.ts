@@ -176,10 +176,10 @@ const routes = app
 
       for (const [
         entity,
-        missingRelationTypes,
+        missingRelations,
       ] of entitiesWithMissingRelations.entries()) {
         try {
-          const linkupQuery = generateLinkupQuery(entity, missingRelationTypes);
+          const linkupQuery = generateLinkupQuery(entity, missingRelations);
           if (!linkupQuery) continue;
 
           const result = await searchLinkup(
@@ -197,7 +197,7 @@ const routes = app
           }
         } catch (e) {
           console.error(
-            `Failed to saturate entity ${entity.name} for relations ${missingRelationTypes}:`,
+            `Failed to saturate entity ${entity.name} for relations ${JSON.stringify(missingRelations)}:`,
             e,
           );
         }

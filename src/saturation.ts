@@ -21,25 +21,42 @@ export type LinkupQueryStructuredResult = z.infer<
 /**
  * Generates a Linkup query to search for the missing relations of an entity.
  * @param entity The entity to generate a query for.
- * @param missingRelationTypes The relation types to generate a query for.
+ * @param missingRelations The relation types to generate a query for, separated by direction.
  * @returns A Linkup query and schema, or null if the relation types are not supported.
  */
 export function generateLinkupQuery(
   entity: SelectEntity,
-  missingRelationTypes: RelationType[],
+  missingRelations: {
+    inRelationTypes: RelationType[];
+    outRelationTypes: RelationType[];
+  },
 ): { query: string; schema: z.ZodType<LinkupQueryStructuredResult> } | null {
-  if (missingRelationTypes.length === 0) {
+  const { inRelationTypes, outRelationTypes } = missingRelations;
+  if (inRelationTypes.length === 0 && outRelationTypes.length === 0) {
     return null;
   }
 
   const entityTypeLabel =
     PrintedEntityTypes[entity.type as keyof typeof PrintedEntityTypes];
 
-  const relationLabels = missingRelationTypes
-    .map((type) => PrintedRelationTypes[type])
-    .join(", ");
+  const parts: string[] = [];
+  parts.push(
+    `Find the following relations for ${entity.name} (${entityTypeLabel}):`,
+  );
 
-  const query = `Find the following relations for ${entity.name} (${entityTypeLabel}): ${relationLabels}`;
+  if (outRelationTypes.length > 0) {
+    const outLabels = outRelationTypes
+      .map((type) => PrintedRelationTypes[type])
+      .join(", ");
+    parts.push(`Outgoing (entity is source): ${outLabels}.`);
+  }
 
-  return { query, schema: LinkupQueryStructuredResultSchema };
+  if (inRelationTypes.length > 0) {
+    const inLabels = inRelationTypes
+      .map((type) => PrintedRelationTypes[type])
+      .join(", ");
+    parts.push(`Incoming (entity is target): ${inLabels}.`);
+  }
+
+  return { query: parts.join(" "), schema: LinkupQueryStructuredResultSchema };
 }

@@ -26,7 +26,7 @@ describe("Privacy Levels Workflow", () => {
     // It takes InsertEntity.
     const entity = await createEntity({
       name,
-      type: "TEST_PRIVACY",
+      type: "PERSON",
       description: "Test entity for privacy",
       metadata: {},
       privacyLevel,
@@ -160,7 +160,7 @@ describe("Privacy Levels Workflow", () => {
     await createRelation({
       sourceEntityId: publicNode.id,
       targetEntityId: privateNode.id,
-      type: "LINKED_TO",
+      type: "WORKS_AT",
       description: "Public link",
       privacyLevel: "PUBLIC",
       sourceDocumentId: null,

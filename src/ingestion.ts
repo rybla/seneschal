@@ -1,4 +1,9 @@
-import type { DocumentType, PrivacyLevel } from "@/common";
+import type {
+  DocumentType,
+  EntityType,
+  PrivacyLevel,
+  RelationType,
+} from "@/common";
 import {
   createDocument,
   createEntity,
@@ -82,7 +87,7 @@ export async function ingestText(
       } else {
         const newEntity = await createEntity({
           name: extractedEntity.name,
-          type: extractedEntity.type,
+          type: extractedEntity.type as unknown as EntityType,
           description: extractedEntity.description,
           sourceDocumentId: document.id,
           metadata: {},
@@ -101,7 +106,7 @@ export async function ingestText(
         const existingRelation = await findRelation(
           sourceId,
           targetId,
-          relation.type,
+          relation.type as unknown as RelationType,
         );
 
         if (existingRelation) {
@@ -119,7 +124,7 @@ export async function ingestText(
           await createRelation({
             sourceEntityId: sourceId,
             targetEntityId: targetId,
-            type: relation.type,
+            type: relation.type as unknown as RelationType,
             description: relation.description,
             sourceDocumentId: document.id,
             properties: {},
