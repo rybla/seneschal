@@ -1,4 +1,3 @@
-import { searchLinkup } from "@/linkup";
 import {
   findCommonRelationPatterns,
   findEntitiesByNames,
@@ -10,6 +9,7 @@ import {
   mergeEntities,
 } from "@/db/query";
 import env from "@/env";
+import { searchLinkup } from "@/linkup";
 import { extractQueryEntities, synthesizeAnswerFromGraph } from "@/llm";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
@@ -17,11 +17,11 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
-import z from "zod";
 import { logger } from "hono/logger";
+import z from "zod";
+import { runMigrations } from "./db/migration";
 import { ingestText } from "./ingestion";
 import { generateLinkupQuery } from "./saturation";
-import { runMigrations } from "./db/migration";
 
 import { PRIVACY_LEVELS } from "@/common";
 
@@ -178,30 +178,28 @@ const routes = app
         entity,
         missingRelationTypes,
       ] of entitiesWithMissingRelations.entries()) {
-        for (const relationType of missingRelationTypes) {
-          try {
-            const linkupQuery = generateLinkupQuery(entity, relationType);
-            if (!linkupQuery) continue;
+        try {
+          const linkupQuery = generateLinkupQuery(entity, missingRelationTypes);
+          if (!linkupQuery) continue;
 
-            const result = await searchLinkup(
-              linkupQuery.query,
-              linkupQuery.schema,
-            );
+          const result = await searchLinkup(
+            linkupQuery.query,
+            linkupQuery.schema,
+          );
 
-            if (result) {
-              await ingestText(
-                JSON.stringify(result, null, 2),
-                "SEARCH",
-                "PRIVATE",
-              );
-              saturatedCount++;
-            }
-          } catch (e) {
-            console.error(
-              `Failed to saturate entity ${entity.name} for relation ${relationType}:`,
-              e,
+          if (result) {
+            await ingestText(
+              JSON.stringify(result, null, 2),
+              "SEARCH",
+              "PRIVATE",
             );
+            saturatedCount++;
           }
+        } catch (e) {
+          console.error(
+            `Failed to saturate entity ${entity.name} for relations ${missingRelationTypes}:`,
+            e,
+          );
         }
       }
 

@@ -17,7 +17,7 @@ import {
 } from "@/db/schema";
 import { eq, inArray, or, notInArray, and, sql, count } from "drizzle-orm";
 import type { GraphData, Node, Edge } from "@/types";
-import type { PrivacyLevel } from "@/common";
+import type { EntityType, PrivacyLevel, RelationType } from "@/common";
 
 /**
  * Creates a new document in the database.
@@ -127,7 +127,7 @@ export async function updateRelation(
 export async function findRelation(
   sourceId: number,
   targetId: number,
-  type: string,
+  type: RelationType,
 ): Promise<SelectRelation | undefined> {
   return db.query.relationsTable.findFirst({
     where: and(
@@ -401,31 +401,6 @@ export async function getGraphContext(
 }
 
 /**
- * Finds companies that do not have a headquarters relation.
- * @returns An array of company entities without headquarters.
- */
-export async function findCompaniesWithoutHeadquarters(): Promise<
-  SelectEntity[]
-> {
-  // Subquery to find all company IDs that have a headquarters
-  const companiesWithHeadquarters = db
-    .select({ id: relationsTable.sourceEntityId })
-    .from(relationsTable)
-    .where(eq(relationsTable.type, "HAS_HEADQUARTERS"));
-
-  // Find all companies whose IDs are not in the subquery result
-  return db
-    .select()
-    .from(entitiesTable)
-    .where(
-      and(
-        eq(entitiesTable.type, "COMPANY"),
-        notInArray(entitiesTable.id, companiesWithHeadquarters),
-      ),
-    );
-}
-
-/**
  * Finds entities that match any of the provided names (exact match).
  * @param names List of entity names to search for.
  * @returns Array of matching entities.
@@ -462,7 +437,7 @@ export async function findEntitiesByNames(
  */
 export async function findCommonRelationPatterns(
   threshold: number = 2,
-): Promise<Map<string, string[]>> {
+): Promise<Map<EntityType, RelationType[]>> {
   const patterns = await db
     .select({
       entityType: entitiesTable.type,
@@ -477,7 +452,7 @@ export async function findCommonRelationPatterns(
     .groupBy(entitiesTable.type, relationsTable.type)
     .having(({ count }) => sql`${count} >= ${threshold}`);
 
-  const result = new Map<string, string[]>();
+  const result = new Map<EntityType, RelationType[]>();
   for (const pattern of patterns) {
     if (pattern.entityType && pattern.relationType) {
       if (!result.has(pattern.entityType)) {
@@ -496,9 +471,9 @@ export async function findCommonRelationPatterns(
  * @returns A map where keys are entities and values are arrays of missing relation types.
  */
 export async function findEntitiesWithMissingRelations(
-  patterns: Map<string, string[]>,
-): Promise<Map<SelectEntity, string[]>> {
-  const result = new Map<SelectEntity, string[]>();
+  patterns: Map<EntityType, RelationType[]>,
+): Promise<Map<SelectEntity, RelationType[]>> {
+  const result = new Map<SelectEntity, RelationType[]>();
 
   for (const [entityType, relationTypes] of patterns.entries()) {
     for (const relationType of relationTypes) {

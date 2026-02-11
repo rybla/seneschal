@@ -16,6 +16,21 @@ export const DOCUMENT_TYPES = [
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
+/**
+ * Printed document types in natural language.
+ */
+export const PrintedDocumentTypes = {
+  GENERIC: "document",
+  INVOICE: "invoice",
+  BANK_STATEMENT: "bank statement",
+  CONTRACT: "contract",
+  SOW: "sow",
+  NDA: "nda",
+  OFFER: "offer",
+  RECEIPT: "receipt",
+  SLACK_MESSAGE: "slack message",
+} as const satisfies Record<DocumentType, string>;
+
 // ----------------------------------------------------------------------------
 // Entity types
 // ----------------------------------------------------------------------------
@@ -44,6 +59,31 @@ export const ENTITY_TYPES = [
 ] as const;
 
 export type EntityType = (typeof ENTITY_TYPES)[number];
+
+/**
+ * Printed entity types in natural language.
+ */
+export const PrintedEntityTypes = {
+  PERSON: "person",
+  COMPANY: "company",
+  PARTY: "party",
+  CONTRACT: "contract",
+  SOW: "sow",
+  CLAUSE: "clause",
+  INVOICE: "invoice",
+  INVOICE_NUMBER: "invoice number",
+  BANK_TRANSACTION: "bank transaction",
+  AMOUNT: "amount",
+  DATE: "date",
+  DELIVERABLE: "deliverable",
+  PAYMENT_TERM: "payment term",
+  OFFER: "offer",
+  INDUSTRY: "industry",
+  VENDOR: "vendor",
+  PAYEE: "payee",
+  ROLE_OR_SERVICE: "role or service",
+  SLACK_MESSAGE: "slack message",
+} as const satisfies Record<EntityType, string>;
 
 // ----------------------------------------------------------------------------
 // Relation types
@@ -75,9 +115,35 @@ export const RELATION_TYPES = [
   "RESTRICTS_COMPANY",
   "CONFLICTS_WITH",
   "EFFECTIVE_UNTIL",
-];
+] as const;
 
 export type RelationType = (typeof RELATION_TYPES)[number];
+
+/**
+ * Relation types printed in natural language.
+ */
+export const PrintedRelationTypes = {
+  WORKS_AT: "works at",
+  SIGNED: "signed",
+  RESTRICTS: "restricts",
+  CONTAINS: "contains",
+  EXPIRES_ON: "expires on",
+  SUBSIDIARY_OF: "subsidiary of",
+  ISSUED_BY: "issued by",
+  PAYABLE_TO: "payable to",
+  AMOUNT_OF: "amount of",
+  DUE_DATE: "due date",
+  PAID_BY: "paid by",
+  MATCHES_TRANSACTION: "matches transaction",
+  PARTY_TO: "party to",
+  DELIVERABLE_OF: "deliverable of",
+  IN_SCOPE: "in scope",
+  PAYMENT_TERMS_OF: "payment terms of",
+  RESTRICTS_INDUSTRY: "restricts industry",
+  RESTRICTS_COMPANY: "restricts company",
+  CONFLICTS_WITH: "conflicts with",
+  EFFECTIVE_UNTIL: "effective until",
+} as const satisfies Record<RelationType, string>;
 
 // ----------------------------------------------------------------------------
 // Privacy Level
@@ -87,6 +153,14 @@ export const PRIVACY_LEVELS = ["PUBLIC", "PRIVATE"] as const;
 
 export type PrivacyLevel = (typeof PRIVACY_LEVELS)[number];
 
+/**
+ * Privacy levels printed in natural language.
+ */
+export const PrintedPrivacyLevels = {
+  PUBLIC: "public",
+  PRIVATE: "private",
+} as const satisfies Record<PrivacyLevel, string>;
+
 // ----------------------------------------------------------------------------
 // Source Type
 // ----------------------------------------------------------------------------
@@ -94,3 +168,11 @@ export type PrivacyLevel = (typeof PRIVACY_LEVELS)[number];
 export const SOURCE_TYPES = ["USER", "SEARCH"] as const;
 
 export type SourceType = (typeof SOURCE_TYPES)[number];
+
+/**
+ * Source types printed in natural language.
+ */
+export const PrintedSourceTypes = {
+  USER: "user",
+  SEARCH: "search",
+} as const satisfies Record<SourceType, string>;

@@ -1,4 +1,9 @@
-import { PRIVACY_LEVELS, SOURCE_TYPES } from "@/common";
+import {
+  ENTITY_TYPES,
+  PRIVACY_LEVELS,
+  RELATION_TYPES,
+  SOURCE_TYPES,
+} from "@/common";
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
@@ -95,7 +100,7 @@ export type SelectDocument = typeof documentsTable.$inferSelect;
 export const entitiesTable = sqliteTable("entities", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  type: text("type").notNull(), // Use ENTITY_TYPES
+  type: text("type", { enum: ENTITY_TYPES }).notNull(),
   description: text("description"),
   privacyLevel: text("privacy_level", { enum: PRIVACY_LEVELS })
     .notNull()
@@ -121,7 +126,7 @@ export const relationsTable = sqliteTable("relations", {
   targetEntityId: integer("target_entity_id")
     .notNull()
     .references(() => entitiesTable.id),
-  type: text("type").notNull(), // Use RELATION_TYPES
+  type: text("type", { enum: RELATION_TYPES }).notNull(),
   description: text("description"),
   privacyLevel: text("privacy_level", { enum: PRIVACY_LEVELS })
     .notNull()

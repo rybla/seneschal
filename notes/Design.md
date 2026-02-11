@@ -18,7 +18,7 @@ In the knowledge graph, nodes are nouns and edges are relations between nouns. F
 - "{clause} expires on {date}"
 - "{party} is subsidiary of {party}"
 
-The knowledge graph is first built by extracting information from documents. Then the knowledge graph is saturated by using a vector embedding to merge equivalent nodes (perhaps names are spelled slightly differently or with words in a slightly different order).
+The knowledge graph is first built by extracting information from documents. Then the knowledge graph is simplified by using a vector embedding to merge equivalent nodes (perhaps names are spelled slightly differently or with words in a slightly different order).
 
 During conversations, a conversation-specific knowledge graph is maintained that keeps track of local references that the user is talked about and exploring, but doesn't want to commit new information theto the persistent database.
 

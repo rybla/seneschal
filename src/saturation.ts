@@ -1,19 +1,27 @@
-import { CompanyHeadquartersSchema } from "./linkup";
+import { RELATION_TYPES, type RelationType } from "./common";
 import type { SelectEntity } from "./db/schema";
-import { toJsonSchema } from "./utility";
+import z from "zod";
 
+export const LinkupQueryStructuredResultSchema = z.object({
+  ...RELATION_TYPES.reduce(
+    (acc, relationType) => ({ ...acc, [relationType]: z.optional(z.string()) }),
+    {} as Record<RelationType, z.ZodOptional<z.ZodString>>,
+  ),
+});
+
+export type LinkupQueryStructuredResult = z.infer<
+  typeof LinkupQueryStructuredResultSchema
+>;
+
+/**
+ * Generates a Linkup query to search for the missing relations of an entity.
+ * @param entity The entity to generate a query for.
+ * @param missingRelationTypes The relation types to generate a query for.
+ * @returns A Linkup query and schema, or null if the relation types are not supported.
+ */
 export function generateLinkupQuery(
   entity: SelectEntity,
-  relationType: string,
-): { query: string; schema: Record<string, unknown> } | null {
-  switch (relationType) {
-    case "HAS_HEADQUARTERS":
-      return {
-        query: `What is the headquarters location of ${entity.name}?`,
-        schema: toJsonSchema(CompanyHeadquartersSchema),
-      };
-    // Add other cases here
-    default:
-      return null;
-  }
+  missingRelationTypes: RelationType[],
+): { query: string; schema: z.ZodType<LinkupQueryStructuredResult> } | null {
+  throw new Error("Not implemented");
 }
