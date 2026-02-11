@@ -1,5 +1,6 @@
 import React, { useState, useEffect, type FormEvent, useCallback } from "react";
 import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
 import ForceGraph2D from "react-force-graph-2d";
 import {
   fetchDocuments,
@@ -417,9 +418,9 @@ function IngestModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal large" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Ingest Document</h3>
           <button className="close-btn" onClick={onClose}>
@@ -496,7 +497,8 @@ function IngestModal({ onClose }: { onClose: () => void }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
