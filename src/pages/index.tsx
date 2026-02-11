@@ -118,16 +118,85 @@ function SearchSection() {
   } | null>(null);
   const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>("PRIVATE");
 
+  // Helper to merge new graph data with existing data, preserving node/edge objects
+  // to maintain simulation state (x, y, vx, vy, etc.)
+  const mergeGraphData = useCallback(
+    (current: GraphData, incoming: GraphData): GraphData => {
+      const mergedNodes = [];
+      const currentNodesMap = new Map(current.nodes.map((n) => [n.id, n]));
+      const incomingNodeIds = new Set();
+
+      for (const newNode of incoming.nodes) {
+        incomingNodeIds.add(newNode.id);
+        const existingNode = currentNodesMap.get(newNode.id);
+        if (existingNode) {
+          // Preserve existing node object to keep force graph state
+          // Update properties if needed
+          Object.assign(existingNode, {
+            name: newNode.name,
+            type: newNode.type,
+            description: newNode.description,
+            metadata: newNode.metadata,
+          });
+          mergedNodes.push(existingNode);
+        } else {
+          // New node
+          mergedNodes.push(newNode);
+        }
+      }
+
+      const mergedEdges = [];
+      const currentEdgesMap = new Map(current.edges.map((e) => [e.id, e]));
+
+      for (const newEdge of incoming.edges) {
+        // Check if both source and target nodes exist in the new node set
+        // (ForceGraph might crash if edge points to non-existent node)
+        if (
+          !incomingNodeIds.has(newEdge.source) ||
+          !incomingNodeIds.has(newEdge.target)
+        ) {
+          continue;
+        }
+
+        const existingEdge = currentEdgesMap.get(newEdge.id);
+        if (existingEdge) {
+          // Preserve existing edge object
+          // Note context: react-force-graph usually mutates source/target to be objects.
+          // The incoming 'newEdge' has numeric IDs for source/target.
+          // We keep the 'existingEdge' which likely has object references.
+
+          // We only update primitive properties if they changed, but usually
+          // edge topology is immutable for the same ID.
+          Object.assign(existingEdge, {
+            type: newEdge.type,
+            description: newEdge.description,
+            properties: newEdge.properties,
+          });
+          mergedEdges.push(existingEdge);
+        } else {
+          mergedEdges.push(newEdge);
+        }
+      }
+
+      return { nodes: mergedNodes, edges: mergedEdges };
+    },
+    [],
+  );
+
   useEffect(() => {
     // Fetch the initial graph data when the component mounts
-    const fetchInitialData = async () => {
-      setLoading(true);
+    let isMounted = true;
+
+    const fetchData = async () => {
       try {
         const [entities, relations] = await Promise.all([
           fetchEntities(),
           fetchRelations(),
         ]);
-        const graphData = {
+
+        if (!isMounted) return;
+
+        const incomingGraphData = {
           nodes: entities,
           edges: relations.map((r) => ({
             ...r,
@@ -135,20 +204,111 @@ function SearchSection() {
             target: r.targetEntityId,
           })),
         };
-        setFullGraphData(graphData);
-        setData({
-          graphData,
-          answer: "Showing the full knowledge graph.",
+
+        setFullGraphData((prevFullData) => {
+          if (!prevFullData) {
+            // First load
+            setData((prevData) => {
+              // If we are showing the full graph (no query active), update it
+              if (
+                !prevData ||
+                prevData.answer === "Showing the full knowledge graph."
+              ) {
+                return {
+                  graphData: incomingGraphData,
+                  answer: "Showing the full knowledge graph.",
+                };
+              }
+              return prevData;
+            });
+            return incomingGraphData;
+          } else {
+            // Merge update
+            const newFullData = mergeGraphData(prevFullData, incomingGraphData);
+
+            // If the view is currently showing the full graph, update that too
+            setData((prevData) => {
+              // We only auto-update the view if the user is looking at the full graph
+              // OR if we want to support live updates even during query results (which is complex).
+              // For now, let's assume we update the 'fullGraphData' state always,
+              // and if 'data' is basically a pointer to 'fullGraphData', we update 'data' too.
+
+              // But 'data' is state, so it holds a reference.
+              // If the user hasn't queried, 'data.graphData' was initialized from 'fullGraphData'.
+              // We should check if we are in "browser mode" (no active query filter usually).
+              // The original code set answer to "Showing the full knowledge graph." initially.
+
+              // Using a simple heuristic: if no query highlights are active OR answer is default.
+              if (
+                !highlightedQuery &&
+                (!prevData ||
+                  prevData.answer === "Showing the full knowledge graph.")
+              ) {
+                return {
+                  ...prevData!,
+                  answer: "Showing the full knowledge graph.",
+                  graphData: newFullData,
+                };
+              }
+
+              // If there IS a highlighted query, we might still want to update 'fullGraphData'
+              // but maybe not the displayed 'data' if it's a static snapshot of a query answer?
+              // The user requirement is: "make sure the data used for the ForceGraph2D is updated regularly... similarly to how the lists... are updated."
+              // If I queried "foo", and a new node "bar" (unrelated) appears, should it show up?
+              // The 'queryGraph' returns a specific subgraph usually.
+              // But the initial implementation just highlighted nodes on the *full* graph if I recall correctly?
+
+              // Looking closer at 'handleSearch':
+              // It calls `queryGraph`. If `result.graphData` is present, it uses that.
+              // AND it sets `highlightedQuery` with nodeIds/edgeIds.
+              // The `data` state is set to `fullGraphData` (the whole graph) with highlights!
+              // See lines 163-166 of original:
+              // setData({ graphData: fullGraphData, answer: ... })
+
+              // THIS IS KEY: The 'SearchSection' displays `fullGraphData` but uses `highlightedQuery` to dim nodes.
+              // So if we update `fullGraphData`, we MUST update `data.graphData` as well,
+              // because `data` holds the reference being rendered.
+
+              if (prevData && prevData.graphData === prevFullData) {
+                // If they are strictly equal, we definitely update
+                return { ...prevData, graphData: newFullData };
+              }
+
+              // If they are not strictly equal but we know we are in "highlight mode" (which displays full graph),
+              // we should still update it.
+              if (highlightedQuery && prevData) {
+                return { ...prevData, graphData: newFullData };
+              }
+
+              return prevData;
+            });
+
+            return newFullData;
+          }
         });
       } catch (err) {
-        console.error(err);
-        alert("Failed to load initial graph: " + err);
-      } finally {
-        setLoading(false);
+        console.error("Poll failed", err);
       }
     };
-    fetchInitialData();
-  }, []);
+
+    fetchData(); // Initial fetch
+    const interval = setInterval(fetchData, 5000); // Poll every 5s
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [highlightedQuery, mergeGraphData]); // Re-create if these change?
+  // Actually mergeGraphData is stable (useCallback).
+  // highlightedQuery might change. If it changes, we re-subscribe?
+  // That might reset the 5s timer, which is fine.
+  // BUT: if we depend on 'highlightedQuery' inside the effect, we might cause unnecessary re-fetches.
+  // 'setFullGraphData' updater function (functional state update) allows us to access current state without dependency.
+  // 'setData' updater also works.
+  // HOWEVER, I used 'highlightedQuery' inside the 'setData' updater.
+  // 'highlightedQuery' is from closure. If I want to access the *current* highlightedQuery inside the interval,
+  // I should probably use a ref or just accept that the effect re-runs when it changes.
+  // Re-running the effect on query change is acceptable; it just resets the poll timer.
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
