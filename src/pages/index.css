@@ -23,30 +23,46 @@
   padding: 0;
 }
 
+html,
+body {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-  overflow-x: hidden;
   background-image:
-    radial-gradient(
-      circle at 15% 50%,
+    radial-gradient(circle at 15% 50%,
       rgba(99, 102, 241, 0.08),
-      transparent 25%
-    ),
-    radial-gradient(
-      circle at 85% 30%,
+      transparent 25%),
+    radial-gradient(circle at 85% 30%,
       rgba(236, 72, 153, 0.08),
-      transparent 25%
-    );
+      transparent 25%);
 }
 
 #root {
-  max-width: 1400px;
+  height: 100%;
+  width: 100%;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem;
+}
+
+header {
+  flex-shrink: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 1rem;
 }
 
 /* Typography */
@@ -85,21 +101,42 @@ p {
 /* Layout */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 2rem;
-  margin-top: 3rem;
+  grid-template-columns: 350px 1fr;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
+}
+
+aside.sidebar {
+  height: 100%;
+  overflow: hidden;
+}
+
+.card.sidebar {
+  height: auto;
+  flex-shrink: 0;
+}
+
+aside.sidebar>.card:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-content {
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 /* Components */
@@ -174,7 +211,7 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-height: 400px;
+  flex: 1;
   overflow-y: auto;
   padding-right: 0.5rem;
 }

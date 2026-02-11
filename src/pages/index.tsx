@@ -543,13 +543,7 @@ function WorkflowSection() {
 function App() {
   return (
     <div className="app-container">
-      <header
-        style={{
-          marginBottom: "3rem",
-          borderBottom: "1px solid var(--card-border)",
-          paddingBottom: "1rem",
-        }}
-      >
+      <header>
         <h1>Seneschal</h1>
         <p style={{ fontSize: "1.1rem", maxWidth: "600px" }}>
           Your autonomous Personal Chief of Staff. Using local AI to map your
