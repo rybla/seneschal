@@ -1,3 +1,5 @@
+import type { PrivacyLevel } from "@/common";
+import { forceRadial } from "d3-force";
 import React, {
   useCallback,
   useEffect,
@@ -5,7 +7,6 @@ import React, {
   useState,
   type FormEvent,
 } from "react";
-import { forceRadial } from "d3-force";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import ForceGraph2D, { type ForceGraphMethods } from "react-force-graph-2d";
@@ -14,12 +15,11 @@ import {
   fetchDocuments,
   fetchEntities,
   fetchRelations,
-  mergeNodes,
+  merge,
   queryGraph,
-  saturateDatabase,
+  saturate,
   uploadDocument,
 } from "./api";
-import type { PrivacyLevel } from "@/common";
 import type {
   Document,
   Entity,
@@ -745,7 +745,7 @@ function WorkflowSection() {
     setMerging(true);
 
     try {
-      const result = await mergeNodes();
+      const result = await merge();
       if ("mergedCount" in result) {
         alert(`Merged ${result.mergedCount} pairs successfully.`);
       } else {
@@ -769,7 +769,7 @@ function WorkflowSection() {
     setSaturating(true);
 
     try {
-      const result = await saturateDatabase(3);
+      const result = await saturate(3);
 
       alert(`Saturated ${result.saturatedCount} entities successfully.`);
     } catch {
@@ -787,7 +787,7 @@ function WorkflowSection() {
         <Button onClick={() => setShowIngest(true)}>📄 Ingest Document</Button>
 
         <Button variant="secondary" onClick={handleMerge} disabled={merging}>
-          🔗 {merging ? "Merging..." : "Merge Nodes"}
+          🔗 {merging ? "Merging..." : "Merge"}
         </Button>
 
         <Button
@@ -795,7 +795,7 @@ function WorkflowSection() {
           onClick={handleSaturate}
           disabled={saturating}
         >
-          🧠 {saturating ? "Saturating..." : "Saturate Database"}
+          🧠 {saturating ? "Saturating..." : "Saturate"}
         </Button>
       </div>
 

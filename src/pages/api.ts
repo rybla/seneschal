@@ -3,8 +3,8 @@ import { hc } from "hono/client";
 import type {
   Document,
   Entity,
-  QueryResponse,
   MergeResult,
+  QueryResponse,
   Relation,
   SaturateResult,
 } from "./types";
@@ -46,19 +46,17 @@ export async function uploadDocument(
   return res.json();
 }
 
-export async function mergeNodes(): Promise<MergeResult> {
+export async function merge(): Promise<MergeResult> {
   const res = await client.api["merge"].$post({});
-  if (!res.ok) throw new Error("Failed to merge nodes");
+  if (!res.ok) throw new Error("Failed to merge");
   return res.json();
 }
 
-export async function saturateDatabase(
-  maxIterations: number,
-): Promise<SaturateResult> {
+export async function saturate(maxIterations: number): Promise<SaturateResult> {
   const res = await client.api["saturate"].$post({
     json: { maxIterations },
   });
-  if (!res.ok) throw new Error("Failed to saturate database");
+  if (!res.ok) throw new Error("Failed to saturate");
   return res.json();
 }
 
