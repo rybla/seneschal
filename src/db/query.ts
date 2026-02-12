@@ -2,22 +2,22 @@
  * This module contains all database queries.
  */
 
+import type { EntityType, PrivacyLevel, RelationType } from "@/common";
 import db from "@/db";
 import {
   documentsTable,
   entitiesTable,
+  relationsTable,
   type DocumentMetadataByType,
   type InsertDocument,
   type InsertEntity,
   type InsertRelation,
-  relationsTable,
   type SelectDocument,
   type SelectEntity,
   type SelectRelation,
 } from "@/db/schema";
-import { eq, inArray, or, notInArray, and, sql, count } from "drizzle-orm";
-import type { GraphData, Node, Edge } from "@/types";
-import type { EntityType, PrivacyLevel, RelationType } from "@/common";
+import type { GraphEdge, GraphData, GraphNode } from "@/types";
+import { and, count, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 
 /**
  * Creates a new document in the database.
@@ -218,8 +218,8 @@ export async function getGraphContext(
   privacyLevel: PrivacyLevel = "PRIVATE", // Default to most permissive if not specified (internal calls)
 ): Promise<GraphData> {
   let currentLevelIds: number[] = [];
-  const nodesMap = new Map<number, Node>();
-  const edgesMap = new Map<number, Edge>();
+  const nodesMap = new Map<number, GraphNode>();
+  const edgesMap = new Map<number, GraphEdge>();
 
   // Helper to build privacy filter
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

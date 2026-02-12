@@ -7,7 +7,7 @@ import type {
   QueryResponse,
   Relation,
   SaturateResult,
-} from "./types";
+} from "@/types";
 
 const client = hc<AppType>("/");
 

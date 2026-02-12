@@ -15,7 +15,6 @@ export const documentsTable = sqliteTable("documents", {
   title: text("title"),
   content: text("content"), // Extracted text content or summary
   type: text("type").notNull().default("GENERIC"), // e.g. "INVOICE", "BANK_STATEMENT", "CONTRACT"
-  securityLevel: text("security_level").notNull().default("standard"), // Clearance level: "standard", "sensitive", etc.
   privacyLevel: text("privacy_level", { enum: PRIVACY_LEVELS })
     .notNull()
     .default("PRIVATE"),

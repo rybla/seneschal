@@ -28,7 +28,7 @@ import type {
   GraphNode,
   QueryResponse,
   Relation,
-} from "./types";
+} from "@/types";
 
 // --- Components ---
 
@@ -141,7 +141,9 @@ function SearchSection() {
       newElementIds: { nodeIds: Set<number>; edgeIds: Set<number> };
     } => {
       const mergedNodes = [];
-      const currentNodesMap = new Map(current.nodes.map((n) => [n.id, n]));
+      const currentNodesMap = new Map(
+        current.nodes.map((n: GraphNode) => [n.id, n]),
+      );
       const incomingNodeIds = new Set<number>();
       const newNodeIds = new Set<number>();
 
@@ -166,7 +168,9 @@ function SearchSection() {
       }
 
       const mergedEdges = [];
-      const currentEdgesMap = new Map(current.edges.map((e) => [e.id, e]));
+      const currentEdgesMap = new Map(
+        current.edges.map((e: GraphEdge) => [e.id, e]),
+      );
       const newEdgeIds = new Set<number>();
 
       for (const newEdge of incoming.edges) {
@@ -590,7 +594,7 @@ function DataLists() {
                 {doc.createdAt
                   ? new Date(doc.createdAt).toLocaleDateString()
                   : "N/A"}{" "}
-                • {doc.securityLevel}
+                • {doc.privacyLevel}
               </span>
             </li>
           ))}

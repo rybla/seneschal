@@ -34,7 +34,6 @@ export async function ingestText(
     title: `Ingested from ${sourceType}`,
     content,
     type: documentType as DocumentType,
-    securityLevel: "standard",
     privacyLevel,
     sourceType,
     metadata: {},
