@@ -27,7 +27,7 @@ import {
   type LinkupQueryStructuredResult,
 } from "./saturation";
 
-import { PRIVACY_LEVELS } from "@/common";
+import { PRIVACY_LEVELS, type PrivacyLevel } from "@/common";
 
 // -----------------------------------------------------------------------------
 
@@ -63,41 +63,15 @@ const routes = app
     ),
     async (c) => {
       const { file, privacyLevel } = c.req.valid("form");
-
-      const buffer = await file.arrayBuffer();
-      const bufferNode = Buffer.from(buffer);
-
-      // Save to uploads directory
-      const uploadsDir = "./uploads";
-      await Bun.write(`${uploadsDir}/${file.name}`, file);
-
-      // Extract text
-
-      let textContent: string;
-      if (file.name.toLowerCase().endsWith(".pdf")) {
-        try {
-          textContent = await pdf.extractTextFromPdf(bufferNode);
-        } catch (e) {
-          console.error("Failed to extract text from PDF", e);
-          return c.json({ error: "Failed to parse PDF" }, 500);
-        }
-      } else {
-        textContent = bufferNode.toString("utf-8");
-      }
-
       try {
-        const document = await ingestText(textContent, "USER", privacyLevel);
-        await mergeNodes();
-        return c.json({
-          success: true,
-          documentId: document.id,
-        });
+        return c.json(await ingestFile(file, privacyLevel));
       } catch (error) {
-        console.error("Database error", error);
-        return c.json({ error: `Database error: ${error}` }, 500);
+        console.error("Ingest error", error);
+        return c.json({ error: `Ingest failed: ${error}` }, 500);
       }
     },
   )
+
   .on("POST", "/merge-nodes", async (c) => {
     try {
       return c.json(await mergeNodes());
@@ -108,57 +82,64 @@ const routes = app
   })
   .on(
     "POST",
-    "/saturate-database",
+    "/saturate",
     zValidator("json", z.object({ maxIterations: z.int() })),
     async (c) => {
+      const { maxIterations } = c.req.valid("json");
       try {
-        let saturatedCount = 0;
-        const { maxIterations } = c.req.valid("json");
-
-        for (let i = 0; i < maxIterations; i++) {
-          const patterns = await findCommonRelationPatterns();
-          const entitiesWithMissingRelations =
-            await findEntitiesWithMissingRelations(patterns);
-          for (const [
-            entity,
-            missingRelations,
-          ] of entitiesWithMissingRelations.entries()) {
-            // If we have saturated the database, break the loop
-            if (entitiesWithMissingRelations.size === 0) break;
-
-            try {
-              const linkupQuery = generateLinkupQuery(entity, missingRelations);
-              if (!linkupQuery) continue;
-
-              const result: LinkupQueryStructuredResult = await searchLinkup(
-                linkupQuery.query,
-                linkupQuery.schema,
-              );
-
-              if (result) {
-                await ingestText(
-                  formatLinkupResult(entity, result),
-                  "SEARCH",
-                  "PUBLIC",
-                );
-                saturatedCount++;
-              }
-            } catch (e) {
-              console.error(
-                `Failed to saturate entity ${entity.name} for relations ${JSON.stringify(missingRelations)}:`,
-                e,
-              );
-            }
-          }
-        }
-
-        return c.json({
-          success: true,
-          saturatedCount,
-        });
+        return c.json(await saturate(maxIterations));
       } catch (error) {
         console.error("Saturation error", error);
         return c.json({ error: `Saturation failed: ${error}` }, 500);
+      }
+    },
+  )
+  .on(
+    "POST",
+    "/ingest-and-merge",
+    zValidator(
+      "form",
+      z.object({
+        file: z.instanceof(File),
+        privacyLevel: z.enum(PRIVACY_LEVELS),
+      }),
+    ),
+    async (c) => {
+      const { file, privacyLevel } = c.req.valid("form");
+      try {
+        const result = await ingestFile(file, privacyLevel);
+        await mergeNodes();
+        return c.json(result);
+      } catch (error) {
+        console.error("Ingest-and-merge error", error);
+        return c.json({ error: `Ingest-and-merge failed: ${error}` }, 500);
+      }
+    },
+  )
+  .on(
+    "POST",
+    "/ingest-and-merge-and-saturate",
+    zValidator(
+      "form",
+      z.object({
+        file: z.instanceof(File),
+        privacyLevel: z.enum(PRIVACY_LEVELS),
+        maxIterations: z.int(),
+      }),
+    ),
+    async (c) => {
+      const { file, privacyLevel, maxIterations } = c.req.valid("form");
+      try {
+        const result = await ingestFile(file, privacyLevel);
+        await mergeNodes();
+        await saturate(maxIterations);
+        return c.json(result);
+      } catch (error) {
+        console.error("Ingest-and-merge-and-saturate error", error);
+        return c.json(
+          { error: `Ingest-and-merge-and-saturate failed: ${error}` },
+          500,
+        );
       }
     },
   )
@@ -243,6 +224,38 @@ const routes = app
     }
   });
 
+async function ingestFile(file: File, privacyLevel: PrivacyLevel) {
+  const buffer = await file.arrayBuffer();
+  const bufferNode = Buffer.from(buffer);
+
+  // Save to uploads directory
+  const uploadsDir = "./uploads";
+  await Bun.write(`${uploadsDir}/${file.name}`, file);
+
+  // Extract text
+
+  let textContent: string;
+  if (file.name.toLowerCase().endsWith(".pdf")) {
+    try {
+      textContent = await pdf.extractTextFromPdf(bufferNode);
+    } catch (e) {
+      throw new Error("Failed to parse PDF", { cause: e });
+    }
+  } else {
+    textContent = bufferNode.toString("utf-8");
+  }
+
+  try {
+    const document = await ingestText(textContent, "USER", privacyLevel);
+    return {
+      success: true,
+      documentId: document.id,
+    };
+  } catch (error) {
+    throw new Error(`Database error: ${error}`, { cause: error });
+  }
+}
+
 async function mergeNodes() {
   try {
     // 1. Fetch all entities
@@ -315,6 +328,52 @@ async function mergeNodes() {
   } catch (error) {
     throw new Error("Merge failed", { cause: error });
   }
+}
+
+async function saturate(maxIterations: number) {
+  let saturatedCount = 0;
+
+  for (let i = 0; i < maxIterations; i++) {
+    const patterns = await findCommonRelationPatterns();
+    const entitiesWithMissingRelations =
+      await findEntitiesWithMissingRelations(patterns);
+    for (const [
+      entity,
+      missingRelations,
+    ] of entitiesWithMissingRelations.entries()) {
+      // If we have saturated the database, break the loop
+      if (entitiesWithMissingRelations.size === 0) break;
+
+      try {
+        const linkupQuery = generateLinkupQuery(entity, missingRelations);
+        if (!linkupQuery) continue;
+
+        const result: LinkupQueryStructuredResult = await searchLinkup(
+          linkupQuery.query,
+          linkupQuery.schema,
+        );
+
+        if (result) {
+          await ingestText(
+            formatLinkupResult(entity, result),
+            "SEARCH",
+            "PUBLIC",
+          );
+          saturatedCount++;
+        }
+      } catch (e) {
+        throw new Error(
+          `Failed to saturate entity ${entity.name} for relations ${JSON.stringify(missingRelations)}`,
+          { cause: e },
+        );
+      }
+    }
+  }
+
+  return {
+    success: true,
+    saturatedCount,
+  };
 }
 
 // -----------------------------------------------------------------------------

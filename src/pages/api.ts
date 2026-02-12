@@ -35,10 +35,11 @@ export async function uploadDocument(
   file: File,
   privacyLevel: PrivacyLevel,
 ): Promise<{ success: boolean; documentId: number }> {
-  const res = await client.api.ingest.$post({
+  const res = await client.api["ingest-and-merge-and-saturate"].$post({
     form: {
       file,
       privacyLevel,
+      maxIterations: "3",
     },
   });
   if (!res.ok) throw new Error("Failed to upload document");
@@ -54,7 +55,7 @@ export async function mergeNodes(): Promise<MergeResult> {
 export async function saturateDatabase(
   maxIterations: number,
 ): Promise<SaturateResult> {
-  const res = await client.api["saturate-database"].$post({
+  const res = await client.api["saturate"].$post({
     json: { maxIterations },
   });
   if (!res.ok) throw new Error("Failed to saturate database");
