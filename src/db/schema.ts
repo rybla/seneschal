@@ -28,69 +28,7 @@ export const documentsTable = sqliteTable("documents", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(
     sql`(CURRENT_TIMESTAMP)`,
   ),
-  metadata: text("metadata", { mode: "json" }), // Type-specific structured data (see DocumentMetadataByType)
 });
-
-/** Structured metadata for INVOICE (Invoice Checker: cross-check with bank statements). */
-export interface InvoiceMetadata {
-  invoiceNumber?: string;
-  vendor?: string;
-  payee?: string;
-  totalAmount?: number;
-  currency?: string;
-  dueDate?: string; // ISO date
-  issueDate?: string;
-}
-
-/** Structured metadata for BANK_STATEMENT (Invoice Checker: match transactions to invoices). */
-export interface BankStatementMetadata {
-  accountId?: string;
-  periodStart?: string;
-  periodEnd?: string;
-  transactions?: Array<{
-    payee?: string;
-    amount?: number;
-    date?: string;
-    description?: string;
-  }>;
-}
-
-/** Structured metadata for SOW (Scope Checker: compare requested work to deliverables). */
-export interface SOWMetadata {
-  parties?: string[];
-  effectiveDate?: string;
-  endDate?: string;
-  deliverables?: string[];
-  paymentTerms?: string;
-  scopeSummary?: string;
-}
-
-/** Structured metadata for CONTRACT (Non-compete Checker: restrictions and validity). */
-export interface ContractMetadata {
-  parties?: string[];
-  effectiveDate?: string;
-  expirationDate?: string;
-  restrictsIndustry?: string[];
-  restrictsCompany?: string[];
-  nonCompeteClauseSummary?: string;
-}
-
-/** Structured metadata for OFFER (Non-compete Checker: conflict with existing contracts). */
-export interface OfferMetadata {
-  offeringParty?: string;
-  roleOrService?: string;
-  industry?: string;
-  company?: string;
-  effectiveDate?: string;
-}
-
-export type DocumentMetadataByType =
-  | InvoiceMetadata
-  | BankStatementMetadata
-  | SOWMetadata
-  | ContractMetadata
-  | OfferMetadata
-  | Record<string, unknown>;
 
 export type InsertDocument = typeof documentsTable.$inferInsert;
 export type SelectDocument = typeof documentsTable.$inferSelect;
@@ -110,7 +48,6 @@ export const entitiesTable = sqliteTable("entities", {
   sourceDocumentId: integer("source_document_id").references(
     () => documentsTable.id,
   ),
-  metadata: text("metadata", { mode: "json" }), // e.g. amount, date for AMOUNT/DATE/BANK_TRANSACTION
 });
 
 export type InsertEntity = typeof entitiesTable.$inferInsert;

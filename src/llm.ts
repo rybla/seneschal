@@ -16,6 +16,7 @@ import { GoogleGenAI } from "@google/genai";
 import { Ollama } from "ollama";
 import { toJsonSchema } from "./utility";
 import z from "zod";
+import { ALWAYS_PUBLIC_LLM } from "./config";
 
 /**
  * Public LLM client for use ONLY with Public data.
@@ -41,7 +42,7 @@ async function generateText(
   prompt: string,
   privacyLevel: PrivacyLevel,
 ): Promise<string> {
-  if (privacyLevel === "PRIVATE") {
+  if (privacyLevel === "PRIVATE" && !ALWAYS_PUBLIC_LLM) {
     const response = await privateClient.chat({
       model: env.OLLAMA_MODEL,
       messages: [
@@ -70,7 +71,7 @@ async function generateJson<T>(
   privacyLevel: PrivacyLevel,
   schema: z.ZodType<T>,
 ): Promise<T> {
-  if (privacyLevel === "PRIVATE") {
+  if (privacyLevel === "PRIVATE" && !ALWAYS_PUBLIC_LLM) {
     const response = await privateClient.chat({
       model: env.OLLAMA_MODEL,
       format: toJsonSchema(schema),
@@ -96,6 +97,36 @@ async function generateJson<T>(
     return schema.parse(JSON.parse(response.text ?? "{}"));
   }
 }
+
+// async function generateAnyJson(
+//   prompt: string,
+//   privacyLevel: PrivacyLevel,
+// ): Promise<Record<string, unknown>> {
+//   if (privacyLevel === "PRIVATE" && !ALWAYS_PUBLIC_LLM) {
+//     const response = await privateClient.chat({
+//       model: env.OLLAMA_MODEL,
+//       format: "json",
+//       messages: [
+//         {
+//           role: "user",
+//           content: prompt,
+//         },
+//       ],
+//     });
+//     console.log(`generateJson response:\n\n${response.message.content}\n\n`);
+//     return JSON.parse(response.message.content);
+//   } else {
+//     // Default to PUBLIC/Gemini
+//     const response = await publicClient.models.generateContent({
+//       model: "gemini-2.0-flash",
+//       config: {
+//         responseMimeType: "application/json",
+//       },
+//       contents: prompt,
+//     });
+//     return JSON.parse(response.text ?? "{}");
+//   }
+// }
 
 /**
  * Extracts entities and relations from a user query using Gemini.
@@ -277,69 +308,6 @@ ${text}
   } catch (e) {
     console.error("Failed to extract entities and relations", e);
     return { entities: [], relations: [] };
-  }
-}
-
-/** Document types that have structured metadata for autonomous actions. */
-const METADATA_DOCUMENT_TYPES = [
-  "INVOICE",
-  "BANK_STATEMENT",
-  "SOW",
-  "CONTRACT",
-  "OFFER",
-] as const;
-
-/**
- * Extracts type-specific structured metadata from document text for use by autonomous actions.
- * Invoice Checker uses invoice + bank statement metadata; Scope Checker uses SOW metadata; Non-compete Checker uses contract + offer metadata.
- * @param text Full document text.
- * @param documentType Classified document type.
- * @returns Structured metadata to store in document.metadata, or null if type has no schema.
- */
-export async function extractStructuredMetadata(
-  text: string,
-  documentType: DocumentType,
-  privacyLevel: PrivacyLevel,
-): Promise<Record<string, unknown> | null> {
-  if (
-    !METADATA_DOCUMENT_TYPES.includes(
-      documentType as (typeof METADATA_DOCUMENT_TYPES)[number],
-    )
-  ) {
-    return null;
-  }
-
-  const prompts: Record<DocumentType, string> = {
-    INVOICE: `Extract from this INVOICE document. Return JSON only: { "invoiceNumber": string or null, "vendor": string, "payee": string, "totalAmount": number, "currency": string, "dueDate": "YYYY-MM-DD", "issueDate": "YYYY-MM-DD" }. Use null for missing.`,
-    BANK_STATEMENT: `Extract from this BANK_STATEMENT. Return JSON only: { "accountId": string, "periodStart": "YYYY-MM-DD", "periodEnd": "YYYY-MM-DD", "transactions": [ { "payee": string, "amount": number, "date": "YYYY-MM-DD", "description": string } ] }. Use null for missing.`,
-    SOW: `Extract from this Statement of Work. Return JSON only: { "parties": string[], "effectiveDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD", "deliverables": string[], "paymentTerms": string, "scopeSummary": string }. Use null for missing.`,
-    CONTRACT: `Extract from this CONTRACT. Return JSON only: { "parties": string[], "effectiveDate": "YYYY-MM-DD", "expirationDate": "YYYY-MM-DD", "restrictsIndustry": string[], "restrictsCompany": string[], "nonCompeteClauseSummary": string }. Use null for missing.`,
-    OFFER: `Extract from this OFFER (job/work offer). Return JSON only: { "offeringParty": string, "roleOrService": string, "industry": string, "company": string, "effectiveDate": "YYYY-MM-DD" }. Use null for missing.`,
-    SLACK_MESSAGE: `Extract from this SLACK_MESSAGE. Return JSON only: { "sender": string, "channel": string, "timestamp": "YYYY-MM-DD", "message": string }. Use null for missing.`,
-    GENERIC: `Extract from this GENERIC document. Return JSON only: { "name": string, "description": string }. Use null for missing.`,
-    NDA: `Extract from this NDA. Return JSON only: { "parties": string[], "effectiveDate": "YYYY-MM-DD", "expirationDate": "YYYY-MM-DD", "restrictsIndustry": string[], "restrictsCompany": string[], "nonCompeteClauseSummary": string }. Use null for missing.`,
-    RECEIPT: `Extract from this RECEIPT. Return JSON only: { "vendor": string, "payee": string, "totalAmount": number, "currency": string, "dueDate": "YYYY-MM-DD", "issueDate": "YYYY-MM-DD" }. Use null for missing.`,
-  };
-  const prompt = `
-${prompts[documentType]}
-
-Document text:
-
-${text.slice(0, 4000)}
-`.trim();
-
-  try {
-    const resultText = await generateText(prompt, privacyLevel);
-    if (!resultText) return null;
-    const jsonStr = resultText
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    const data = JSON.parse(jsonStr) as Record<string, unknown>;
-    return data;
-  } catch (e) {
-    console.error("Failed to extract structured metadata", e);
-    return null;
   }
 }
 

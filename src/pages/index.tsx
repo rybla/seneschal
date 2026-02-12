@@ -157,7 +157,6 @@ function SearchSection() {
             name: newNode.name,
             type: newNode.type,
             description: newNode.description,
-            metadata: newNode.metadata,
           });
           mergedNodes.push(existingNode);
         } else {

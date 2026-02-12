@@ -9,17 +9,13 @@ import {
   createEntity,
   createRelation,
   findEntitiesByNames,
+  findRelation,
   updateDocument,
   updateEntity,
-  findRelation,
   updateRelation,
 } from "@/db/query";
 import type { SelectDocument } from "@/db/schema";
-import {
-  classifyDocument,
-  extractEntitiesAndRelations,
-  extractStructuredMetadata,
-} from "@/llm";
+import { classifyDocument, extractEntitiesAndRelations } from "@/llm";
 
 export async function ingestText(
   content: string,
@@ -36,20 +32,11 @@ export async function ingestText(
     type: documentType as DocumentType,
     privacyLevel,
     sourceType,
-    metadata: {},
   });
 
-  const structuredMetadata = await extractStructuredMetadata(
-    content,
-    documentType,
-    privacyLevel,
-  );
-  if (structuredMetadata && Object.keys(structuredMetadata).length > 0) {
-    await updateDocument(document.id, {
-      metadata: structuredMetadata,
-      lastIndexedAt: new Date(),
-    });
-  }
+  await updateDocument(document.id, {
+    lastIndexedAt: new Date(),
+  });
 
   const createdEntitiesMap = new Map<string, number>();
 
@@ -91,7 +78,6 @@ export async function ingestText(
         type: extractedEntity.type as unknown as EntityType,
         description: extractedEntity.description,
         sourceDocumentId: document.id,
-        metadata: {},
         privacyLevel, // Init with document's privacy level
       });
       createdEntitiesMap.set(extractedEntity.name, newEntity.id);

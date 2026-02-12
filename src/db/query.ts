@@ -8,7 +8,6 @@ import {
   documentsTable,
   entitiesTable,
   relationsTable,
-  type DocumentMetadataByType,
   type InsertDocument,
   type InsertEntity,
   type InsertRelation,
@@ -16,7 +15,7 @@ import {
   type SelectEntity,
   type SelectRelation,
 } from "@/db/schema";
-import type { GraphEdge, GraphData, GraphNode } from "@/types";
+import type { GraphData, GraphEdge, GraphNode } from "@/types";
 import { and, count, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 
 /**
@@ -51,7 +50,7 @@ export async function getDocumentByPath(
  */
 export async function updateDocument(
   documentId: number,
-  updates: { metadata?: DocumentMetadataByType; lastIndexedAt?: Date },
+  updates: { lastIndexedAt?: Date },
 ): Promise<SelectDocument> {
   const [doc] = await db
     .update(documentsTable)
@@ -250,7 +249,6 @@ export async function getGraphContext(
         name: node.name,
         type: node.type,
         description: node.description,
-        metadata: node.metadata,
         privacyLevel: node.privacyLevel,
       });
     }
@@ -285,7 +283,7 @@ export async function getGraphContext(
       // Or we can blindly add edges and prune later?
       // Better: Fetch potential next nodes, filter them, then only add edges that connect visible nodes.
       // But that requires fetching nodes first.
-      // Let's optimisticly add edges, and then filter edges that point to missing nodes at the end?
+      // Let's optimistically add edges, and then filter edges that point to missing nodes at the end?
       // Or just let the UI handle it?
       // For security, we should ensure we don't return edges to hidden nodes.
       // We will perform a check on the neighbor nodes.
@@ -326,7 +324,6 @@ export async function getGraphContext(
           name: node.name,
           type: node.type,
           description: node.description,
-          metadata: node.metadata,
           privacyLevel: node.privacyLevel,
         });
       }

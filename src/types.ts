@@ -7,7 +7,6 @@ export interface Document {
   title: string | null;
   content: string | null;
   privacyLevel: PrivacyLevel;
-  metadata: JSONValue;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -19,7 +18,6 @@ export interface Entity {
   description: string | null;
   sourceDocumentId: number | null;
   privacyLevel: PrivacyLevel;
-  metadata: JSONValue;
 }
 
 export interface Relation {
@@ -39,7 +37,6 @@ export interface GraphNode {
   type: EntityType;
   description?: string | null;
   privacyLevel: PrivacyLevel;
-  metadata?: unknown;
 }
 
 export interface GraphEdge {

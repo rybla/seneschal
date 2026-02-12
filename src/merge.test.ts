@@ -27,7 +27,6 @@ describe("Node Merging Workflow", () => {
       name,
       type,
       description: "Test entity for merging",
-      metadata: {},
     });
     return entity;
   }

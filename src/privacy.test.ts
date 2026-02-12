@@ -54,7 +54,6 @@ describe("Privacy Levels Workflow", () => {
       name,
       type: "PERSON",
       description: "Test entity for privacy",
-      metadata: {},
       privacyLevel,
     });
     return entity;
