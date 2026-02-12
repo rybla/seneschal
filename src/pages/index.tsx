@@ -19,6 +19,7 @@ import {
   queryGraph,
   saturate,
   uploadDocument,
+  generateSuggestedQueries,
 } from "./api";
 import type {
   Document,
@@ -129,6 +130,9 @@ function SearchSection() {
     edgeIds: Set<number>;
   } | null>(null);
   const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>("PRIVATE");
+  const [suggestions, setSuggestions] = useState<
+    { label: string; prompt: string }[]
+  >([]);
 
   // Helper to merge new graph data with existing data, preserving node/edge objects
   // to maintain simulation state (x, y, vx, vy, etc.)
@@ -317,10 +321,21 @@ function SearchSection() {
           graphData: fullGraphData, // Keep full graph context
           answer: result.answer || "Query completed.",
         });
+
+        // Generate follow-up queries in the background
+        generateSuggestedQueries(
+          query,
+          result.graphData,
+          result.answer || "",
+          privacyLevel,
+        )
+          .then(setSuggestions)
+          .catch((e) => console.error("Failed to generate suggestions", e));
       } else {
         // Fallback or empty result
         setData(result);
         setHighlightedQuery(null);
+        setSuggestions([]);
       }
     } catch (err) {
       console.error(err);
@@ -502,6 +517,63 @@ function SearchSection() {
           </div>
         </div>
       </form>
+
+      {/* Follow-up Suggestions */}
+      {suggestions.length > 0 && (
+        <div
+          className="suggestions-list"
+          style={{
+            marginTop: "-1rem",
+            marginBottom: "2rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+            maxHeight: "200px",
+            overflowY: "auto",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.85rem",
+              color: "var(--text-secondary)",
+              marginBottom: "0.25rem",
+            }}
+          >
+            Suggested follow-up queries:
+          </div>
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              className="suggestion-btn"
+              style={{
+                textAlign: "left",
+                padding: "0.75rem",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid var(--card-border)",
+                borderRadius: "6px",
+                cursor: "pointer",
+                color: "var(--text-main)",
+                fontSize: "0.9rem",
+                transition: "background 0.2s",
+              }}
+              onClick={() => {
+                setQuery(s.prompt);
+                // Optional: auto-submit or just populate? Design says "replace the text".
+                // Users might want to edit before submitting.
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)")
+              }
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {data && (
         <Card className="answer-card">

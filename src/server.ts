@@ -10,7 +10,11 @@ import {
 } from "@/db/query";
 import env from "@/env";
 import { searchLinkup } from "@/linkup";
-import { extractQueryEntities, synthesizeAnswerFromGraph } from "@/llm";
+import {
+  extractQueryEntities,
+  synthesizeAnswerFromGraph,
+  generateSuggestedQueries,
+} from "@/llm";
 import { findSimilarEntities, getOramaDb, indexEntity } from "@/orama";
 import * as pdf from "@/pdf";
 import { zValidator } from "@hono/zod-validator";
@@ -29,7 +33,12 @@ import {
   formatGenericLinkupResult,
 } from "./saturation";
 
-import { PRIVACY_LEVELS, type PrivacyLevel } from "@/common";
+import {
+  PRIVACY_LEVELS,
+  type PrivacyLevel,
+  ENTITY_TYPES,
+  RELATION_TYPES,
+} from "@/common";
 
 // -----------------------------------------------------------------------------
 
@@ -224,6 +233,55 @@ const routes = app
       } catch (e) {
         console.error("Query error", e);
         return c.json({ error: `Query failed: ${e}` }, 500);
+      }
+    },
+  )
+  .on(
+    "POST",
+    "/suggested-queries",
+    zValidator(
+      "json",
+      z.object({
+        query: z.string(),
+        graphData: z.object({
+          nodes: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              type: z.enum(ENTITY_TYPES),
+            }),
+          ),
+          edges: z.array(
+            z.object({
+              source: z.number(),
+              target: z.number(),
+              type: z.enum(RELATION_TYPES),
+            }),
+          ),
+        }),
+        answer: z.string(),
+        privacy_level: z.enum(PRIVACY_LEVELS),
+      }),
+    ),
+    async (c) => {
+      const { query, graphData, answer, privacy_level } = c.req.valid("json");
+      try {
+        // Cast the simplified graphData to the expected type for generateSuggestedQueries
+        // The implementation of generateSuggestedQueries expects specific types, but z.any() lets us pass it through.
+        // We trust the structure matches sufficiently for the LLM prompt generation.
+        const suggestions = await generateSuggestedQueries(
+          query,
+          graphData,
+          answer,
+          privacy_level,
+        );
+        return c.json({ suggestions });
+      } catch (e) {
+        console.error("Generate follow-up queries error", e);
+        return c.json(
+          { error: `Generate follow-up queries failed: ${e}` },
+          500,
+        );
       }
     },
   )

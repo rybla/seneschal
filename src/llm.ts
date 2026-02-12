@@ -278,6 +278,12 @@ Relations:
 - <source_entity_name> <relation_type> <target_entity_name>: <description>
 - ...
 
+Important notes:
+- Entity types are ${ENTITY_TYPE_LIST}
+- Relation types are ${RELATION_TYPE_LIST}
+- If you are unsure about the type of an entity or relation, use the GENERIC type.
+- ALWAYS refer to entities by their FULL NAME. NEVER use pronouns.
+
 The document text is:
 
 ${text}
@@ -340,16 +346,16 @@ export async function synthesizeAnswerFromGraph(
     `;
 
   const prompt = `
-    Based on the following knowledge graph context, provide a concise, natural language answer to the user's query.
-    Synthesize the information from the nodes and edges into a coherent response.
-    Do not return the graph data, only the answer.
+Based on the following knowledge graph context, provide a concise, natural language answer to the user's query.
+Synthesize the information from the nodes and edges into a coherent response.
+Do not return the graph data, only the answer.
 
-    User Query: "${query}"
+User Query: "${query}"
 
-    Knowledge Graph Context:
-    ${contextStr}
+Knowledge Graph Context:
+${contextStr}
 
-    Answer:
+Answer:
     `;
 
   try {
@@ -358,5 +364,79 @@ export async function synthesizeAnswerFromGraph(
   } catch (e) {
     console.error("Failed to synthesize answer from graph", e);
     return "I encountered an error while trying to find an answer.";
+  }
+}
+
+/**
+ * Generates a list of suggested follow-up queries based on the current search context.
+ * @param query The user's original query.
+ * @param graphData The graph data returned for the query.
+ * @param answer The synthesized answer.
+ * @param privacyLevel The privacy level of the query.
+ * @returns A list of suggested follow-up queries.
+ */
+export async function generateSuggestedQueries(
+  query: string,
+  graphData: {
+    nodes: { id: number; name: string; type: EntityType }[];
+    edges: { source: number; target: number; type: RelationType }[];
+  },
+  answer: string,
+  privacyLevel: PrivacyLevel,
+): Promise<{ label: string; prompt: string }[]> {
+  try {
+    const contextStr = `
+Nodes:
+${graphData.nodes.map((n) => `- ${n.name} (Type: ${PrintedEntityTypes[n.type]}, ID: ${n.id})`).join("\n")}
+
+Edges:
+${graphData.edges
+  .map((e) => {
+    const sourceNode = graphData.nodes.find((n) => n.id === e.source);
+    const targetNode = graphData.nodes.find((n) => n.id === e.target);
+    return `- ${sourceNode?.name} -> ${PrintedRelationTypes[e.type]} -> ${targetNode?.name}`;
+  })
+  .join("\n")}
+`.trim();
+
+    const prompt = `
+Based on the following context (original query, graph data, and answer), generate a list of 3-5 suggested follow-up queries.
+These queries should help the user explore the knowledge graph further.
+
+The suggested queries MUST follow one of these formats:
+- "Research more about {entity}"
+- "Research more about {relation} involving {entity}"
+- "Find connections between {entity1} and {entity2} involving {relation}"
+- "Find connections between {entity1} and {entity2}"
+- "Research more about {relation} involving {entity1} and {entity2}"
+
+Original Query: "${query}"
+
+Answer: "${answer}"
+
+Graph Data:
+${contextStr}
+
+Return the suggestions as a JSON list of objects with "label" (short summary for UI) and "prompt" (full query text).
+The "label" should be very short, e.g. "Research {entity}" or "Connect {entity1} & {entity2}".
+`.trim();
+
+    const result = await generateJson(
+      prompt,
+      privacyLevel,
+      z.object({
+        suggestions: z.array(
+          z.object({
+            label: z.string().describe("Short summary for UI"),
+            prompt: z.string().describe("Full query text"),
+          }),
+        ),
+      }),
+    );
+
+    return result.suggestions;
+  } catch (e) {
+    console.error("Failed to generate follow-up queries", e);
+    return [];
   }
 }

@@ -68,3 +68,35 @@ export async function queryGraph(
   if (!res.ok) throw new Error("Failed to query graph");
   return res.json();
 }
+
+import type { GraphData } from "@/types";
+
+export async function generateSuggestedQueries(
+  query: string,
+  graphData: GraphData,
+  answer: string,
+  privacy_level: PrivacyLevel,
+): Promise<{ label: string; prompt: string }[]> {
+  const res = await client.api["suggested-queries"].$post({
+    json: {
+      query,
+      graphData: {
+        nodes: graphData.nodes.map((n) => ({
+          id: n.id,
+          name: n.name,
+          type: n.type,
+        })),
+        edges: graphData.edges.map((e) => ({
+          source: e.source,
+          target: e.target,
+          type: e.type,
+        })),
+      },
+      answer,
+      privacy_level,
+    },
+  });
+  if (!res.ok) throw new Error("Failed to generate follow-up queries");
+  const data = await res.json();
+  return data.suggestions;
+}
