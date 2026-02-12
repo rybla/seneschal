@@ -8,6 +8,7 @@ import {
   mergeEntities,
 } from "./db/query";
 import { app, type AppType } from "./server";
+import type { PrivacyLevel } from "./common";
 
 const client = hc<AppType>("http://localhost", {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
@@ -19,7 +20,7 @@ describe("Privacy Levels Workflow", () => {
 
   async function createTestEntity(
     name: string,
-    privacyLevel: "PUBLIC" | "PRIVATE" = "PUBLIC",
+    privacyLevel: PrivacyLevel = "PUBLIC",
   ) {
     // Entities table requires more fields but `createEntity` helper might handle some defaults?
     // Let's check `createEntity` signature in query.ts.

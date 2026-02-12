@@ -21,7 +21,10 @@ import { logger } from "hono/logger";
 import z from "zod";
 import { runMigrations } from "./db/migration";
 import { ingestText } from "./ingestion";
-import { generateLinkupQuery } from "./saturation";
+import {
+  generateLinkupQuery,
+  type LinkupQueryStructuredResult,
+} from "./saturation";
 
 import { PRIVACY_LEVELS } from "@/common";
 
@@ -182,7 +185,7 @@ const routes = app
           const linkupQuery = generateLinkupQuery(entity, missingRelations);
           if (!linkupQuery) continue;
 
-          const result = await searchLinkup(
+          const result: LinkupQueryStructuredResult = await searchLinkup(
             linkupQuery.query,
             linkupQuery.schema,
           );
