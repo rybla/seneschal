@@ -451,6 +451,7 @@ function SearchSection() {
       >
         <div style={{ display: "flex", gap: "1rem" }}>
           <input
+            className="query-input"
             type="text"
             placeholder="Ask a question..."
             value={query}

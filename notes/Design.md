@@ -73,13 +73,15 @@ Private is considered a higher privacy level than Public.
 
 When the user uploads a document, this will be ingested into the existing Knowledge Graph and then patterns of missing relations in the Knowledge Graph will be identified. An external service via LinkUp will be used to search for more information about those missing relations. Additionally, when the user performs a query, then entities mentioned in the query that don't exist in the knowledge graph will be searched for in order to include more information about them in the knowledge graph and how they relate to other entities in the knowledge graph. 
 
-## Autonomous Actions
+## Responsive Querying
 
-The system can also take autonomous action on behalf of the user. In particular:
+When the user submits a query, they get a response back that focuses on a particular part of the knowledge graph and summarizes an answer to their original question. All of this context should be fed back to a new API call that generates a list of suggested next queries. These queries should follow these formats:
 
-- Scope Checker: Intercepts slack messages from the user's employer, checks requested work against existing statement of work, and then notifies the user if the employer is asking them to do something outside the SOW or should otherwise cost extra.
-- Invoice Checker: Checks that invoices are paid by cross-checking bank statements with invoices.
-- Non-compete Checker: Checks for conflicts between current contracts and potential work offers.
+- "Research more about {entity}"
+- "Research more about {relation} involving {entity}"
+- "Find connections between {entity1} and {entity2} involving {relation}"
+- "Find connections between {entity1} and {entity2}"
+- "Research more about {relation} involving {entity1} and {entity2}"
 
 ## Frontend
 
