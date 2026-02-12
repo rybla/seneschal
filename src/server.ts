@@ -164,11 +164,11 @@ const routes = app
           return c.json({ nodes: [], edges: [] });
         }
 
-        const resolvedEntities = await findEntitiesByNames(
-          entities,
-          privacy_level,
-        );
+        const { resolvedEntities, unresolvedEntities } =
+          await findEntitiesByNames(entities, privacy_level);
         const ids = resolvedEntities.map((e) => e.id);
+
+        // TODO: do a search for info on unresolvedEntities so the search results can be added to the knowledge graph
 
         if (ids.length === 0) {
           return c.json({ nodes: [], edges: [] });

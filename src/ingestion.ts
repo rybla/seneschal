@@ -69,10 +69,15 @@ export async function ingestText(
 
       // We search with "PRIVATE" (default) to find ANY existing entity with this name,
       // regardless of its privacy level, because we want to merge/link to it.
-      const existing = await findEntitiesByNames([extractedEntity.name]);
+      const { resolvedEntities } = await findEntitiesByNames([
+        {
+          entityName: extractedEntity.name,
+          entityDescription: extractedEntity.description,
+        },
+      ]);
 
-      if (existing.length > 0 && existing[0]) {
-        const existingEntity = existing[0];
+      if (resolvedEntities.length > 0 && resolvedEntities[0]) {
+        const existingEntity = resolvedEntities[0];
         createdEntitiesMap.set(extractedEntity.name, existingEntity.id);
 
         // Privacy Upgrade Logic:

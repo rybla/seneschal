@@ -407,26 +407,47 @@ export async function getGraphContext(
  */
 /**
  * Finds entities that match any of the provided names (exact match).
- * @param names List of entity names to search for.
+ * @param entities List of entity names to search for.
  * @param privacyLevel The privacy level of the query.
  * @returns Array of matching entities.
  */
 export async function findEntitiesByNames(
-  names: string[],
+  entities: {
+    entityName: string;
+    entityDescription: string;
+  }[],
   privacyLevel: PrivacyLevel = "PRIVATE",
-): Promise<SelectEntity[]> {
-  if (names.length === 0) return [];
+): Promise<{
+  resolvedEntities: SelectEntity[];
+  unresolvedEntities: { entityName: string; entityDescription: string }[];
+}> {
+  if (entities.length === 0)
+    return { resolvedEntities: [], unresolvedEntities: [] };
 
-  const filters = [inArray(entitiesTable.name, names)];
+  const filters = [
+    inArray(
+      entitiesTable.name,
+      entities.map((n) => n.entityName),
+    ),
+  ];
 
   if (privacyLevel === "PUBLIC") {
     filters.push(eq(entitiesTable.privacyLevel, "PUBLIC"));
   }
 
-  return db
+  const resolvedEntities = await db
     .select()
     .from(entitiesTable)
     .where(and(...filters));
+  return {
+    resolvedEntities,
+    unresolvedEntities: entities.filter(
+      (entity) =>
+        !resolvedEntities.some(
+          (resolvedEntity) => resolvedEntity.name === entity.entityName,
+        ),
+    ),
+  };
 }
 
 /**

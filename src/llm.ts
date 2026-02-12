@@ -1,27 +1,41 @@
+import type { DocumentType, PrivacyLevel } from "@/common";
+import {
+  ENTITY_TYPES,
+  RELATION_TYPES,
+  DOCUMENT_TYPES as VALID_DOCUMENT_TYPES,
+} from "@/common";
 import env from "@/env";
 import { GoogleGenAI } from "@google/genai";
 import { Ollama } from "ollama";
-import type { PrivacyLevel } from "@/common";
-import {
-  DOCUMENT_TYPES as VALID_DOCUMENT_TYPES,
-  ENTITY_TYPES,
-  RELATION_TYPES,
-} from "@/common";
+import { toJsonSchema } from "./utility";
+import z from "zod";
 
-const ai = new GoogleGenAI({
+/**
+ * Public LLM client for use ONLY with Public data.
+ */
+const publicClient = new GoogleGenAI({
   apiKey: env.GEMINI_API_KEY,
 });
 
-const ollama = new Ollama({
+/**
+ * Private LLM client for use with either Public or Private data.
+ */
+const privateClient = new Ollama({
   headers: { Authorization: "Bearer " + env.OLLAMA_API_KEY },
 });
 
+/**
+ * Generates text using the appropriate LLM client based on privacy level.
+ * @param prompt The prompt to use for text generation.
+ * @param privacyLevel The privacy level of the data.
+ * @returns The generated text.
+ */
 async function generateText(
   prompt: string,
   privacyLevel: PrivacyLevel,
 ): Promise<string> {
   if (privacyLevel === "PRIVATE") {
-    const response = await ollama.chat({
+    const response = await privateClient.chat({
       model: "gpt-oss:20b-cloud",
       messages: [
         {
@@ -31,17 +45,48 @@ async function generateText(
       ],
     });
     return response.message.content;
+  } else {
+    // Default to PUBLIC/Gemini
+    const response = await publicClient.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
+
+    const text = response.text;
+
+    return text ?? "";
   }
+}
 
-  // Default to PUBLIC/Gemini
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: prompt,
-  });
-
-  const text = response.text;
-
-  return text ?? "";
+async function generateJson<T>(
+  prompt: string,
+  privacyLevel: PrivacyLevel,
+  schema: z.ZodType<T>,
+): Promise<T> {
+  if (privacyLevel === "PRIVATE") {
+    const response = await privateClient.chat({
+      model: "gpt-oss:20b-cloud",
+      format: toJsonSchema(schema),
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+    return schema.parse(JSON.parse(response.message.content));
+  } else {
+    // Default to PUBLIC/Gemini
+    const response = await publicClient.models.generateContent({
+      model: "gemini-2.0-flash",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: toJsonSchema(schema),
+      },
+      contents: prompt,
+    });
+    return schema.parse(JSON.parse(response.text ?? "{}"));
+  }
 }
 
 /**
@@ -52,28 +97,32 @@ async function generateText(
 export async function extractQueryEntities(
   query: string,
   privacyLevel: PrivacyLevel,
-): Promise<string[]> {
-  const prompt = `
-    Extract the key entities (people, companies, contracts, clauses, etc.) from the following query.
-    Return ONLY a JSON array of strings, where each string is an extracted entity name.
-    Do not include any markdown formatting or explanation.
-
-    Query: "${query}"
-    `;
-
+): Promise<{ entityName: string; entityDescription: string }[]> {
   try {
+    const prompt = `
+Extract the key entities (${ENTITY_TYPES.join(", ")}) from the following query.
+Return ONLY a list of the entity names and short descriptions in the following format:
+
+- <entity_name>: <entity_description>
+- <entity_name>: <entity_description>
+- ...
+
+Query: "${query}"
+`;
     const text = await generateText(prompt, privacyLevel);
-
     if (!text) return [];
-
-    // Clean up potential markdown code blocks
-    const jsonStr = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    return JSON.parse(jsonStr) as string[];
+    return generateJson(
+      `Extract the details of entities and relations from the following text: ${text}`,
+      privacyLevel,
+      z.array(
+        z.object({
+          entityName: z.string(),
+          entityDescription: z.string(),
+        }),
+      ),
+    );
   } catch (e) {
-    console.error("Failed to parse Gemini response for entity extraction", e);
+    console.error("Failed to parse LLM response for entity extraction", e);
     return [];
   }
 }
@@ -89,41 +138,26 @@ export async function extractQueryEntities(
 export async function classifyDocument(
   text: string,
   privacyLevel: PrivacyLevel,
-): Promise<string> {
-  const prompt = `
-    Classify the following document into one of these types:
-    - GENERIC
-    - INVOICE
-    - BANK_STATEMENT
-    - CONTRACT
-    - SOW (Statement of Work)
-    - NDA (Non-Disclosure Agreement)
-    - OFFER (Job Offer or work offer)
-    - RECEIPT
-    - SLACK_MESSAGE (message from employer requesting work)
-
-    Return ONLY the type name (e.g. "INVOICE").
-    If you are unsure or it doesn't fit specific categories, return "GENERIC".
-
-    Document Preview:
-    "${text.slice(0, 2000)}"
-    `;
-
+): Promise<DocumentType> {
   try {
-    const result = (await generateText(prompt, privacyLevel))
-      .trim()
-      .toUpperCase();
-    if (
-      result &&
-      VALID_DOCUMENT_TYPES.includes(
-        result as (typeof VALID_DOCUMENT_TYPES)[number],
-      )
-    ) {
-      return result;
-    }
-    return "GENERIC";
+    const prompt = `
+Classify the following document into one of these types:
+
+${VALID_DOCUMENT_TYPES.map((t) => `    - ${t}`).join("\n")}
+
+Return ONLY the type name (e.g. "INVOICE").
+If you are unsure or it doesn't fit specific categories, return "GENERIC".
+
+Document Preview:
+
+${text.slice(0, 2000)}
+`.trim();
+    return generateJson(prompt, privacyLevel, z.enum(VALID_DOCUMENT_TYPES));
   } catch (e) {
-    console.error("Failed to classify document", e);
+    console.error(
+      "Failed to parse LLM response for document classification",
+      e,
+    );
     return "GENERIC";
   }
 }
@@ -152,43 +186,72 @@ export async function extractEntitiesAndRelations(
     description: string;
   }[];
 }> {
-  const prompt = `
-    Analyze the following text from a ${documentType} document.
-    Extract key entities and relations. Use ONLY these entity types: ${ENTITY_TYPE_LIST}
-    Use ONLY these relation types: ${RELATION_TYPE_LIST}
-
-    Document-type specific guidance:
-    - INVOICE: Extract VENDOR, PAYEE, AMOUNT (total), DATE (due/issue), INVOICE_NUMBER. Use ISSUED_BY, PAYABLE_TO, AMOUNT_OF, DUE_DATE.
-    - BANK_STATEMENT: Extract each transaction as BANK_TRANSACTION with PAYEE, AMOUNT, DATE. Use PAYABLE_TO, AMOUNT_OF for matching to invoices later.
-    - SOW: Extract PARTY, DELIVERABLE, DATE (effective/end), PAYMENT_TERM. Use PARTY_TO, DELIVERABLE_OF, PAYMENT_TERMS_OF, EFFECTIVE_UNTIL.
-    - CONTRACT/NDA: Extract PARTY, CLAUSE, DATE, INDUSTRY/COMPANY for restrictions. Use RESTRICTS_INDUSTRY, RESTRICTS_COMPANY, CONTAINS, EXPIRES_ON, EFFECTIVE_UNTIL.
-    - OFFER: Extract COMPANY, PERSON, ROLE_OR_SERVICE, INDUSTRY. Use CONFLICTS_WITH when comparing to contracts.
-
-    Return a JSON object with two arrays: "entities" and "relations". Use exact entity names as they appear so relations can link source/target by name.
-
-    "entities": [ { "name": "Exact Name/Value", "type": "<one of the entity types above>", "description": "Brief description" } ]
-    "relations": [ { "source": "Source Entity name", "target": "Target Entity name", "type": "<one of the relation types above>", "description": "Brief explanation" } ]
-
-    Return ONLY the JSON. No markdown.
-
-    Text:
-    "${text}"
-    `;
-
   try {
+    const prompt = `
+Analyze the following text from a ${documentType} document.
+Extract key entities and relations. Use ONLY these entity types: ${ENTITY_TYPE_LIST}
+Use ONLY these relation types: ${RELATION_TYPE_LIST}
+
+${(() => {
+  switch (documentType) {
+    case "INVOICE":
+      return "Extract VENDOR, PAYEE, AMOUNT (total), DATE (due/issue), INVOICE_NUMBER. Use ISSUED_BY, PAYABLE_TO, AMOUNT_OF, DUE_DATE.";
+    case "BANK_STATEMENT":
+      return "Extract each transaction as BANK_TRANSACTION with PAYEE, AMOUNT, DATE. Use PAYABLE_TO, AMOUNT_OF for matching to invoices later.";
+    case "SOW":
+      return "Extract PARTY, DELIVERABLE, DATE (effective/end), PAYMENT_TERM. Use PARTY_TO, DELIVERABLE_OF, PAYMENT_TERMS_OF, EFFECTIVE_UNTIL.";
+    case "CONTRACT":
+    case "NDA":
+      return "Extract PARTY, CLAUSE, DATE, INDUSTRY/COMPANY for restrictions. Use RESTRICTS_INDUSTRY, RESTRICTS_COMPANY, CONTAINS, EXPIRES_ON, EFFECTIVE_UNTIL.";
+    case "OFFER":
+      return "Extract COMPANY, PERSON, ROLE_OR_SERVICE, INDUSTRY. Use CONFLICTS_WITH when comparing to contracts.";
+    default:
+      return "";
+  }
+})()}
+
+Your response should have two sections. The first section should be called "Entities" and contain just a list of entity names, their types, and a brief description. The second section should be called "Relations" and contain just a list of relations with their source entity name, target entity name, relation type, and a brief description of the evidence for the relation.
+
+For example, here's a template for the response:
+
+Entities:
+
+- <entity_name>: <entity_type> - <description>
+- <entity_name>: <entity_type> - <description>
+- ...
+
+Relations:
+- <source_entity_name> <relation_type> <target_entity_name>: <description>
+- <source_entity_name> <relation_type> <target_entity_name>: <description>
+- ...
+
+Document text:
+
+${text}
+  `.trim();
     const resultText = await generateText(prompt, privacyLevel);
     if (!resultText) return { entities: [], relations: [] };
-
-    const jsonStr = resultText
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    const data = JSON.parse(jsonStr);
-
-    return {
-      entities: data.entities || [],
-      relations: data.relations || [],
-    };
+    return generateJson(
+      `Extract the details of entities and relations from the following text: ${resultText}`,
+      privacyLevel,
+      z.object({
+        entities: z.array(
+          z.object({
+            name: z.string(),
+            type: z.string(),
+            description: z.string(),
+          }),
+        ),
+        relations: z.array(
+          z.object({
+            source: z.string(),
+            target: z.string(),
+            type: z.string(),
+            description: z.string(),
+          }),
+        ),
+      }),
+    );
   } catch (e) {
     console.error("Failed to extract entities and relations", e);
     return { entities: [], relations: [] };
@@ -213,7 +276,7 @@ const METADATA_DOCUMENT_TYPES = [
  */
 export async function extractStructuredMetadata(
   text: string,
-  documentType: string,
+  documentType: DocumentType,
   privacyLevel: PrivacyLevel,
 ): Promise<Record<string, unknown> | null> {
   if (
@@ -224,14 +287,24 @@ export async function extractStructuredMetadata(
     return null;
   }
 
-  const prompts: Record<string, string> = {
+  const prompts: Record<DocumentType, string> = {
     INVOICE: `Extract from this INVOICE document. Return JSON only: { "invoiceNumber": string or null, "vendor": string, "payee": string, "totalAmount": number, "currency": string, "dueDate": "YYYY-MM-DD", "issueDate": "YYYY-MM-DD" }. Use null for missing.`,
     BANK_STATEMENT: `Extract from this BANK_STATEMENT. Return JSON only: { "accountId": string, "periodStart": "YYYY-MM-DD", "periodEnd": "YYYY-MM-DD", "transactions": [ { "payee": string, "amount": number, "date": "YYYY-MM-DD", "description": string } ] }. Use null for missing.`,
     SOW: `Extract from this Statement of Work. Return JSON only: { "parties": string[], "effectiveDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD", "deliverables": string[], "paymentTerms": string, "scopeSummary": string }. Use null for missing.`,
     CONTRACT: `Extract from this CONTRACT. Return JSON only: { "parties": string[], "effectiveDate": "YYYY-MM-DD", "expirationDate": "YYYY-MM-DD", "restrictsIndustry": string[], "restrictsCompany": string[], "nonCompeteClauseSummary": string }. Use null for missing.`,
     OFFER: `Extract from this OFFER (job/work offer). Return JSON only: { "offeringParty": string, "roleOrService": string, "industry": string, "company": string, "effectiveDate": "YYYY-MM-DD" }. Use null for missing.`,
+    SLACK_MESSAGE: `Extract from this SLACK_MESSAGE. Return JSON only: { "sender": string, "channel": string, "timestamp": "YYYY-MM-DD", "message": string }. Use null for missing.`,
+    GENERIC: `Extract from this GENERIC document. Return JSON only: { "name": string, "description": string }. Use null for missing.`,
+    NDA: `Extract from this NDA. Return JSON only: { "parties": string[], "effectiveDate": "YYYY-MM-DD", "expirationDate": "YYYY-MM-DD", "restrictsIndustry": string[], "restrictsCompany": string[], "nonCompeteClauseSummary": string }. Use null for missing.`,
+    RECEIPT: `Extract from this RECEIPT. Return JSON only: { "vendor": string, "payee": string, "totalAmount": number, "currency": string, "dueDate": "YYYY-MM-DD", "issueDate": "YYYY-MM-DD" }. Use null for missing.`,
   };
-  const prompt = `${prompts[documentType]}\n\nDocument:\n"${text.slice(0, 4000)}"`;
+  const prompt = `
+${prompts[documentType]}
+
+Document text:
+
+${text.slice(0, 4000)}
+`.trim();
 
   try {
     const resultText = await generateText(prompt, privacyLevel);

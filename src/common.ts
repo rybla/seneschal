@@ -46,6 +46,7 @@ export const ENTITY_TYPES = [
   "INVOICE",
   "INVOICE_NUMBER",
   "BANK_TRANSACTION",
+  "BANK_STATEMENT",
   "AMOUNT",
   "DATE",
   "DELIVERABLE",
@@ -83,6 +84,7 @@ export const PrintedEntityTypes = {
   PAYEE: "payee",
   ROLE_OR_SERVICE: "role or service",
   SLACK_MESSAGE: "slack message",
+  BANK_STATEMENT: "bank statement",
 } as const satisfies Record<EntityType, string>;
 
 // ----------------------------------------------------------------------------
