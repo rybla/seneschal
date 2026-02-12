@@ -36,7 +36,7 @@ async function generateText(
 ): Promise<string> {
   if (privacyLevel === "PRIVATE") {
     const response = await privateClient.chat({
-      model: "gpt-oss:20b-cloud",
+      model: env.OLLAMA_MODEL,
       messages: [
         {
           role: "user",
@@ -65,7 +65,7 @@ async function generateJson<T>(
 ): Promise<T> {
   if (privacyLevel === "PRIVATE") {
     const response = await privateClient.chat({
-      model: "gpt-oss:20b-cloud",
+      model: env.OLLAMA_MODEL,
       format: toJsonSchema(schema),
       messages: [
         {
@@ -74,6 +74,7 @@ async function generateJson<T>(
         },
       ],
     });
+    console.log(`generateJson response:\n\n${response.message.content}\n\n`);
     return schema.parse(JSON.parse(response.message.content));
   } else {
     // Default to PUBLIC/Gemini
@@ -152,11 +153,21 @@ Document Preview:
 
 ${text.slice(0, 2000)}
 `.trim();
-    return generateJson(prompt, privacyLevel, z.enum(VALID_DOCUMENT_TYPES));
-  } catch (e) {
+    const { documentType } = await generateJson(
+      prompt,
+      privacyLevel,
+      z.object({
+        confidence: z
+          .number()
+          .describe("Confidence level on a scale from 1 to 100"),
+        documentType: z.enum(VALID_DOCUMENT_TYPES),
+      }),
+    );
+    return documentType;
+  } catch (error) {
     console.error(
       "Failed to parse LLM response for document classification",
-      e,
+      error,
     );
     return "GENERIC";
   }

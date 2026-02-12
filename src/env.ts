@@ -5,6 +5,7 @@ export const EnvSchema = z.object({
   GEMINI_API_KEY: z.string(),
   OLLAMA_API_KEY: z.string(),
   LINKUP_API_KEY: z.string(),
+  OLLAMA_MODEL: z.string(),
   HOST: z.string(),
   PORT: z.coerce.number(),
 });

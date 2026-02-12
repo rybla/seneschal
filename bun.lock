@@ -19,6 +19,7 @@
         "react-force-graph-2d": "^1.29.1",
         "react-markdown": "^10.1.0",
         "zod": "^4.3.6",
+        "zod-to-json-schema": "^3.25.1",
       },
       "devDependencies": {
         "@eslint/js": "^10.0.1",

@@ -24,7 +24,7 @@ typecheck: install_dependencies
 test:
     @echo
     @echo "Running tests..."
-    bun --env-file=.env.test test
+    bun --env-file=.env.test test --timeout 30000
     @echo "Successfully ran tests."
 
 clean_build:
