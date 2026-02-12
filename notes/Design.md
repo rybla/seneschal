@@ -69,6 +69,10 @@ Private is considered a higher privacy level than Public.
     - If the query is Public, then the query is ONLY allowed to access Public entities and relations. The backend will also use a more powerful LLM (via the Google Gemini API) to analyze the results of querying the knowledge graph.
     - If the query is Private, then the query is allowed to access both Public and Private entities and relations. The backend will use a local LLM (via Ollama) to analyze the results of querying the knowledge graph.
 
+## Saturation
+
+When the user uploads a document, this will be ingested into the existing Knowledge Graph and then patterns of missing relations in the Knowledge Graph will be identified. An external service via LinkUp will be used to search for more information about those missing relations. Additionally, when the user performs a query, then entities mentioned in the query that don't exist in the knowledge graph will be searched for in order to include more information about them in the knowledge graph and how they relate to other entities in the knowledge graph. 
+
 ## Autonomous Actions
 
 The system can also take autonomous action on behalf of the user. In particular:
