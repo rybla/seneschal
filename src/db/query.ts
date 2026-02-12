@@ -414,12 +414,17 @@ export async function getGraphContext(
 export async function findEntitiesByNames(
   entities: {
     entityName: string;
+    entityType: EntityType;
     entityDescription: string;
   }[],
   privacyLevel: PrivacyLevel = "PRIVATE",
 ): Promise<{
   resolvedEntities: SelectEntity[];
-  unresolvedEntities: { entityName: string; entityDescription: string }[];
+  unresolvedEntities: {
+    entityName: string;
+    entityType: EntityType;
+    entityDescription: string;
+  }[];
 }> {
   if (entities.length === 0)
     return { resolvedEntities: [], unresolvedEntities: [] };

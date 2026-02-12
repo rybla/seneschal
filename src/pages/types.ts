@@ -1,3 +1,4 @@
+import type { EntityType, RelationType } from "@/common";
 import type { JSONValue } from "hono/utils/types";
 
 export type PrivacyLevel = "PUBLIC" | "PRIVATE";
@@ -16,7 +17,7 @@ export interface Document {
 export interface Entity {
   id: number;
   name: string;
-  type: string;
+  type: EntityType;
   description: string | null;
   sourceDocumentId: number | null;
   metadata: JSONValue;
@@ -26,7 +27,7 @@ export interface Relation {
   id: number;
   sourceEntityId: number;
   targetEntityId: number;
-  type: string;
+  type: RelationType;
   description: string | null;
   sourceDocumentId: number | null;
   properties: JSONValue;
@@ -35,7 +36,7 @@ export interface Relation {
 export interface GraphNode {
   id: number;
   name: string;
-  type: string;
+  type: EntityType;
   description?: string | null;
   metadata?: unknown;
 }
@@ -44,7 +45,7 @@ export interface GraphEdge {
   id: number;
   source: number;
   target: number;
-  type: string;
+  type: RelationType;
   description?: string | null;
   properties?: unknown;
 }

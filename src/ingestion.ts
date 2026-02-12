@@ -68,6 +68,7 @@ export async function ingestText(
     const { resolvedEntities } = await findEntitiesByNames([
       {
         entityName: extractedEntity.name,
+        entityType: extractedEntity.type,
         entityDescription: extractedEntity.description,
       },
     ]);

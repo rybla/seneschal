@@ -1,4 +1,4 @@
-import type { PrivacyLevel } from "@/common";
+import type { EntityType, PrivacyLevel, RelationType } from "@/common";
 
 /**
  * Represents a node in the knowledge graph.
@@ -6,7 +6,7 @@ import type { PrivacyLevel } from "@/common";
 export interface Node {
   id: number;
   name: string;
-  type: string;
+  type: EntityType;
   description?: string | null;
   metadata?: unknown;
   privacyLevel?: PrivacyLevel;
@@ -19,7 +19,7 @@ export interface Edge {
   id: number;
   source: number;
   target: number;
-  type: string;
+  type: RelationType;
   description?: string | null;
   properties?: unknown;
   privacyLevel?: PrivacyLevel;

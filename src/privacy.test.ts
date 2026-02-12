@@ -31,6 +31,8 @@ mock.module("@/llm", () => ({
     // Default empty
     return { entities: [], relations: [] };
   }),
+  classifyDocument: mock(async () => "GENERIC"),
+  extractStructuredMetadata: mock(async () => ({})),
 }));
 
 const client = hc<AppType>("http://localhost", {

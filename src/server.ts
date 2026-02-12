@@ -25,6 +25,8 @@ import {
   generateLinkupQuery,
   formatLinkupResult,
   type LinkupQueryStructuredResult,
+  generateGenericLinkupQuery,
+  formatGenericLinkupResult,
 } from "./saturation";
 
 import { PRIVACY_LEVELS, type PrivacyLevel } from "@/common";
@@ -165,9 +167,39 @@ const routes = app
 
         const { resolvedEntities, unresolvedEntities } =
           await findEntitiesByNames(entities, privacy_level);
-        const ids = resolvedEntities.map((e) => e.id);
+        // Search for info on unresolvedEntities so the search results can be added to the knowledge graph
+        for (const entity of unresolvedEntities) {
+          try {
+            const linkupQuery = generateGenericLinkupQuery({
+              name: entity.entityName,
+              type: entity.entityType,
+              description: entity.entityDescription,
+            });
 
-        // TODO: do a search for info on unresolvedEntities so the search results can be added to the knowledge graph
+            const result = await searchLinkup(
+              linkupQuery.query,
+              linkupQuery.schema,
+            );
+
+            if (result) {
+              const text = formatGenericLinkupResult(
+                { name: entity.entityName, type: entity.entityType },
+                result,
+              );
+              await ingestText(text, "SEARCH", privacy_level);
+            }
+          } catch (e) {
+            console.error(
+              `Failed to search/ingest for unresolved entity ${entity.entityName}`,
+              e,
+            );
+          }
+        }
+
+        // Re-resolve entities to include newly ingested ones
+        const { resolvedEntities: allResolvedEntities } =
+          await findEntitiesByNames(entities, privacy_level);
+        const ids = allResolvedEntities.map((e) => e.id);
 
         if (ids.length === 0) {
           return c.json({ nodes: [], edges: [] });
@@ -360,10 +392,10 @@ async function saturate(maxIterations: number) {
           );
           saturatedCount++;
         }
-      } catch (e) {
+      } catch (error) {
         throw new Error(
           `Failed to saturate entity ${entity.name} for relations ${JSON.stringify(missingRelations)}`,
-          { cause: e },
+          { cause: error },
         );
       }
     }

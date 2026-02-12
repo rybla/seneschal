@@ -1,6 +1,13 @@
-import type { DocumentType, PrivacyLevel } from "@/common";
+import type {
+  DocumentType,
+  EntityType,
+  PrivacyLevel,
+  RelationType,
+} from "@/common";
 import {
   ENTITY_TYPES,
+  PrintedEntityTypes,
+  PrintedRelationTypes,
   RELATION_TYPES,
   DOCUMENT_TYPES as VALID_DOCUMENT_TYPES,
 } from "@/common";
@@ -98,14 +105,16 @@ async function generateJson<T>(
 export async function extractQueryEntities(
   query: string,
   privacyLevel: PrivacyLevel,
-): Promise<{ entityName: string; entityDescription: string }[]> {
+): Promise<
+  { entityName: string; entityType: EntityType; entityDescription: string }[]
+> {
   try {
     const prompt = `
 Extract the key entities (${ENTITY_TYPES.join(", ")}) from the following query.
 Return ONLY a list of the entity names and short descriptions in the following format:
 
-- <entity_name>: <entity_description>
-- <entity_name>: <entity_description>
+- <entity_name>: <entity_type> - <entity_description>
+- <entity_name>: <entity_type> - <entity_description>
 - ...
 
 Query: "${query}"
@@ -118,6 +127,7 @@ Query: "${query}"
       z.array(
         z.object({
           entityName: z.string(),
+          entityType: z.enum(ENTITY_TYPES).describe("The type of the entity"),
           entityDescription: z.string(),
         }),
       ),
@@ -190,11 +200,11 @@ export async function extractEntitiesAndRelations(
   documentType: DocumentType = "GENERIC",
   privacyLevel: PrivacyLevel,
 ): Promise<{
-  entities: { name: string; type: string; description: string }[];
+  entities: { name: string; type: EntityType; description: string }[];
   relations: {
     source: string;
     target: string;
-    type: string;
+    type: RelationType;
     description: string;
   }[];
 }> {
@@ -250,7 +260,7 @@ ${text}
         entities: z.array(
           z.object({
             name: z.string(),
-            type: z.string(),
+            type: z.enum(ENTITY_TYPES),
             description: z.string(),
           }),
         ),
@@ -258,7 +268,7 @@ ${text}
           z.object({
             source: z.string(),
             target: z.string(),
-            type: z.string(),
+            type: z.enum(RELATION_TYPES),
             description: z.string(),
           }),
         ),
@@ -342,21 +352,21 @@ ${text.slice(0, 4000)}
 export async function synthesizeAnswerFromGraph(
   query: string,
   graphContext: {
-    nodes: { id: number; name: string; type: string }[];
-    edges: { source: number; target: number; type: string }[];
+    nodes: { id: number; name: string; type: EntityType }[];
+    edges: { source: number; target: number; type: RelationType }[];
   },
   privacyLevel: PrivacyLevel,
 ): Promise<string> {
   const contextStr = `
     Nodes:
-    ${graphContext.nodes.map((n) => `- ${n.name} (Type: ${n.type}, ID: ${n.id})`).join("\n")}
+    ${graphContext.nodes.map((n) => `- ${n.name} (Type: ${PrintedEntityTypes[n.type]}, ID: ${n.id})`).join("\n")}
 
     Edges:
     ${graphContext.edges
       .map((e) => {
         const sourceNode = graphContext.nodes.find((n) => n.id === e.source);
         const targetNode = graphContext.nodes.find((n) => n.id === e.target);
-        return `- ${sourceNode?.name} -> ${e.type} -> ${targetNode?.name}`;
+        return `- ${sourceNode?.name} -> ${PrintedRelationTypes[e.type]} -> ${targetNode?.name}`;
       })
       .join("\n")}
     `;
