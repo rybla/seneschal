@@ -553,6 +553,80 @@
       </div>
     </section>
 
+    <!-- Section: Slideshow Gallery -->
+    <section id="gallery" class="bg-zinc-900 py-20 border-t border-zinc-900">
+      <div class="section-container text-center">
+        <h2 class="text-3xl font-bold text-white mb-12">Interface Gallery</h2>
+
+        <div
+          class="relative max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl border border-zinc-800 bg-black group"
+        >
+          <!-- Image Container with Aspect Ratio -->
+          <div class="relative w-full pb-[56.25%]">
+            <!-- 16:9 Aspect Ratio -->
+            <img
+              id="slideshowFrame"
+              src="assets/img01.png"
+              alt="Seneschal Interface"
+              class="absolute top-0 left-0 w-full h-full object-contain"
+            />
+          </div>
+
+          <!-- Controls Overlay -->
+          <div
+            class="absolute inset-0 flex justify-between items-center px-4 pointer-events-none"
+          >
+            <button
+              id="prevSlide"
+              class="pointer-events-auto bg-black/50 hover:bg-purple-600 text-white p-3 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 transform hover:scale-110"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                stroke="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15.75 19.5L8.25 12l7.5-7.5"
+                />
+              </svg>
+            </button>
+
+            <button
+              id="nextSlide"
+              class="pointer-events-auto bg-black/50 hover:bg-purple-600 text-white p-3 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 transform hover:scale-110"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                stroke="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Progress/Counter -->
+          <div
+            class="absolute bottom-4 right-4 bg-black/80 text-xs font-mono text-zinc-300 px-3 py-1 rounded-full border border-zinc-700"
+          >
+            <span id="slideCounter">1 / 17</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Section 5: Ingestion Support -->
     <section class="py-20 bg-black">
       <div class="section-container">
@@ -1006,6 +1080,65 @@
 
       resizeHero();
       animateHero();
+
+      // --- 6. Slideshow Logic ---
+      const slideImages = [
+        "assets/img01.png",
+        "assets/img02.png",
+        "assets/img03.png",
+        "assets/img04.png",
+        "assets/img05.png",
+        "assets/img06.png",
+        "assets/img07.png",
+        "assets/img08.png",
+        "assets/img09.png",
+        "assets/img10.png",
+        "assets/img11.png",
+        "assets/img12.png",
+        "assets/img13.png",
+        "assets/img14.png",
+        "assets/img15.png",
+        "assets/img16.png",
+        "assets/img17.png",
+      ];
+
+      let currentSlide = 0;
+      const slideFrame = document.getElementById("slideshowFrame");
+      const slideCounter = document.getElementById("slideCounter");
+      let slideInterval;
+
+      function updateSlide(index) {
+        if (index < 0) index = slideImages.length - 1;
+        if (index >= slideImages.length) index = 0;
+        currentSlide = index;
+
+        // Simple fade effect could be added here by toggling opacity classes,
+        // but for now we just swap the src.
+        slideFrame.src = slideImages[currentSlide];
+        slideCounter.innerText = `${currentSlide + 1} / ${slideImages.length}`;
+      }
+
+      function nextSlide() {
+        updateSlide(currentSlide + 1);
+        resetSlideTimer();
+      }
+
+      function prevSlide() {
+        updateSlide(currentSlide - 1);
+        resetSlideTimer();
+      }
+
+      function resetSlideTimer() {
+        clearInterval(slideInterval);
+        // Auto-play every 4 seconds
+        slideInterval = setInterval(() => updateSlide(currentSlide + 1), 4000);
+      }
+
+      document.getElementById("nextSlide").addEventListener("click", nextSlide);
+      document.getElementById("prevSlide").addEventListener("click", prevSlide);
+
+      // Start slideshow
+      resetSlideTimer();
     </script>
   </body>
 </html>
