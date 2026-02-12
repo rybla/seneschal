@@ -368,6 +368,8 @@ async function saturate(maxIterations: number) {
         );
       }
     }
+
+    await mergeNodes();
   }
 
   return {
