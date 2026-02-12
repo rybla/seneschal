@@ -6,16 +6,62 @@ import {
 } from "./common";
 import type { SelectEntity } from "./db/schema";
 import z from "zod";
+import type { Codomain } from "./utility";
 
-export const LinkupQueryStructuredResultSchema = z.object({
-  ...RELATION_TYPES.reduce(
-    (acc, relationType) => ({ ...acc, [relationType]: z.optional(z.string()) }),
-    {} as Record<RelationType, z.ZodOptional<z.ZodString>>,
-  ),
-});
+export const LinkupQueryStructuredResultSchema = (entity: SelectEntity) =>
+  z.object({
+    inRelations: z.array(
+      z
+        .object({
+          relationType: z.enum(RELATION_TYPES),
+          otherEntityName: z
+            .string()
+            .describe(
+              `The name of the other entity that is related to ${entity.name}`,
+            ),
+          otherEntityType: z
+            .enum(PrintedEntityTypes)
+            .describe(
+              `The type of the other entity, which is ${PrintedEntityTypes[entity.type]}`,
+            ),
+          evidence: z
+            .string()
+            .describe(
+              "The evidence for the relation as a passaged of extracted text or summarized information",
+            ),
+        })
+        .describe(
+          `An instance of a relation of the form <otherEntity> <relationType> ${entity.name}, where <otherEntity> is the name of the other entity and <relationType> is the relation type.`,
+        ),
+    ),
+    outRelations: z.array(
+      z
+        .object({
+          relationType: z.enum(RELATION_TYPES),
+          otherEntityName: z
+            .string()
+            .describe(
+              `The name of the other entity that is related to ${entity.name}`,
+            ),
+          otherEntityType: z
+            .enum(PrintedEntityTypes)
+            .describe(
+              `The type of the other entity, which is ${PrintedEntityTypes[entity.type]}`,
+            ),
+          evidence: z
+            .string()
+            .describe(
+              "The evidence for the relation as a passaged of extracted text or summarized information",
+            ),
+        })
+        .describe(
+          `An instance of a relation of the form "${entity.name} <relationType> <otherEntity>", where <otherEntity> is the name of the other entity and <relationType> is the relation type.`,
+        ),
+    ),
+  });
 
 export type LinkupQueryStructuredResult = z.infer<
-  typeof LinkupQueryStructuredResultSchema
+  Codomain<typeof LinkupQueryStructuredResultSchema>
 >;
 
 /**
@@ -39,24 +85,27 @@ export function generateLinkupQuery(
   const entityTypeLabel =
     PrintedEntityTypes[entity.type as keyof typeof PrintedEntityTypes];
 
-  const parts: string[] = [];
-  parts.push(
-    `Find the following relations for ${entity.name} (${entityTypeLabel}):`,
-  );
+  const inRelationsPart =
+    inRelationTypes.length > 0
+      ? inRelationTypes
+          .map(
+            (inRelationType) =>
+              `    - ... ${PrintedRelationTypes[inRelationType]} ${entity.name} (${entityTypeLabel})`,
+          )
+          .join("\n")
+      : "";
 
-  if (outRelationTypes.length > 0) {
-    const outLabels = outRelationTypes
-      .map((type) => PrintedRelationTypes[type])
-      .join(", ");
-    parts.push(`Outgoing (entity is source): ${outLabels}.`);
-  }
+  const outRelationsPart =
+    outRelationTypes.length > 0
+      ? outRelationTypes
+          .map(
+            (outRelationType) =>
+              `    - ... ${PrintedRelationTypes[outRelationType]} ${entity.name} (${entityTypeLabel})`,
+          )
+          .join("\n")
+      : "";
 
-  if (inRelationTypes.length > 0) {
-    const inLabels = inRelationTypes
-      .map((type) => PrintedRelationTypes[type])
-      .join(", ");
-    parts.push(`Incoming (entity is target): ${inLabels}.`);
-  }
+  const query = `**Your task is to** find the missing relations for ${entity.name} (${entityTypeLabel}):\n\n${inRelationsPart}\n${outRelationsPart}\n\nFirst scrape homepages, press releases, and other relevant sources for ${entity.name} (${entityTypeLabel}). Then, synthesize the extracted data into a structured format that can be used to populate the missing relations.`;
 
-  return { query: parts.join(" "), schema: LinkupQueryStructuredResultSchema };
+  return { query, schema: LinkupQueryStructuredResultSchema(entity) };
 }

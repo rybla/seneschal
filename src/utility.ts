@@ -8,5 +8,8 @@ export type AssertSubtype<T extends U, U> = T;
  * @returns The JSON schema.
  */
 export function toJsonSchema(schema: z.ZodTypeAny) {
-    return z.toJSONSchema(schema, { target: "openapi-3.0" });
+  return z.toJSONSchema(schema, { target: "openapi-3.0" });
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Codomain<T> = T extends (...args: any[]) => infer R ? R : never;
