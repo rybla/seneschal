@@ -171,51 +171,62 @@ const routes = app
       return c.json({ error: "Merge failed" }, 500);
     }
   })
-  .on("POST", "/saturate-database", async (c) => {
-    try {
-      const patterns = await findCommonRelationPatterns();
-      const entitiesWithMissingRelations =
-        await findEntitiesWithMissingRelations(patterns);
-      let saturatedCount = 0;
+  .on(
+    "POST",
+    "/saturate-database",
+    zValidator("json", z.object({ maxIterations: z.int() })),
+    async (c) => {
+      try {
+        let saturatedCount = 0;
+        const { maxIterations } = c.req.valid("json");
 
-      for (const [
-        entity,
-        missingRelations,
-      ] of entitiesWithMissingRelations.entries()) {
-        try {
-          const linkupQuery = generateLinkupQuery(entity, missingRelations);
-          if (!linkupQuery) continue;
+        for (let i = 0; i < maxIterations; i++) {
+          const patterns = await findCommonRelationPatterns();
+          const entitiesWithMissingRelations =
+            await findEntitiesWithMissingRelations(patterns);
+          for (const [
+            entity,
+            missingRelations,
+          ] of entitiesWithMissingRelations.entries()) {
+            // If we have saturated the database, break the loop
+            if (entitiesWithMissingRelations.size === 0) break;
 
-          const result: LinkupQueryStructuredResult = await searchLinkup(
-            linkupQuery.query,
-            linkupQuery.schema,
-          );
+            try {
+              const linkupQuery = generateLinkupQuery(entity, missingRelations);
+              if (!linkupQuery) continue;
 
-          if (result) {
-            await ingestText(
-              formatLinkupResult(entity, result),
-              "SEARCH",
-              "PUBLIC",
-            );
-            saturatedCount++;
+              const result: LinkupQueryStructuredResult = await searchLinkup(
+                linkupQuery.query,
+                linkupQuery.schema,
+              );
+
+              if (result) {
+                await ingestText(
+                  formatLinkupResult(entity, result),
+                  "SEARCH",
+                  "PUBLIC",
+                );
+                saturatedCount++;
+              }
+            } catch (e) {
+              console.error(
+                `Failed to saturate entity ${entity.name} for relations ${JSON.stringify(missingRelations)}:`,
+                e,
+              );
+            }
           }
-        } catch (e) {
-          console.error(
-            `Failed to saturate entity ${entity.name} for relations ${JSON.stringify(missingRelations)}:`,
-            e,
-          );
         }
-      }
 
-      return c.json({
-        success: true,
-        saturatedCount,
-      });
-    } catch (error) {
-      console.error("Saturation error", error);
-      return c.json({ error: "Saturation failed" }, 500);
-    }
-  })
+        return c.json({
+          success: true,
+          saturatedCount,
+        });
+      } catch (error) {
+        console.error("Saturation error", error);
+        return c.json({ error: "Saturation failed" }, 500);
+      }
+    },
+  )
   .on(
     "POST",
     "/query",

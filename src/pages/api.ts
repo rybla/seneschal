@@ -51,8 +51,12 @@ export async function mergeNodes(): Promise<MergeResult> {
   return res.json();
 }
 
-export async function saturateDatabase(): Promise<SaturateResult> {
-  const res = await client.api["saturate-database"].$post({});
+export async function saturateDatabase(
+  maxIterations: number,
+): Promise<SaturateResult> {
+  const res = await client.api["saturate-database"].$post({
+    json: { maxIterations },
+  });
   if (!res.ok) throw new Error("Failed to saturate database");
   return res.json();
 }

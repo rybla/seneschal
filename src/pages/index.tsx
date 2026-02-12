@@ -769,7 +769,7 @@ function WorkflowSection() {
     setSaturating(true);
 
     try {
-      const result = await saturateDatabase();
+      const result = await saturateDatabase(3);
 
       alert(`Saturated ${result.saturatedCount} entities successfully.`);
     } catch {
