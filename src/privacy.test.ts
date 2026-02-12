@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, mock } from "bun:test";
 import { hc } from "hono/client";
 import {
   createEntity,
@@ -9,6 +9,29 @@ import {
 } from "./db/query";
 import { app, type AppType } from "./server";
 import type { PrivacyLevel } from "./common";
+import * as llm from "./llm";
+
+mock.module("@/llm", () => ({
+  ...llm,
+  extractEntitiesAndRelations: mock(async (text: string) => {
+    // Check for our specific test entity pattern
+    const match = text.match(/IngestUpgradeBy_\d+/);
+    if (match) {
+      return {
+        entities: [
+          {
+            name: match[0],
+            type: "PERSON",
+            description: "Test entity extracted from mock",
+          },
+        ],
+        relations: [],
+      };
+    }
+    // Default empty
+    return { entities: [], relations: [] };
+  }),
+}));
 
 const client = hc<AppType>("http://localhost", {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>

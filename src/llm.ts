@@ -186,9 +186,8 @@ const RELATION_TYPE_LIST = RELATION_TYPES.join(", ");
  * @returns An object containing extracted entities and relations.
  */
 export async function extractEntitiesAndRelations(
-  entireDocumentText: string,
   text: string,
-  documentType: string = "GENERIC",
+  documentType: DocumentType = "GENERIC",
   privacyLevel: PrivacyLevel,
 ): Promise<{
   entities: { name: string; type: string; description: string }[];
@@ -201,7 +200,7 @@ export async function extractEntitiesAndRelations(
 }> {
   try {
     const prompt = `
-Analyze the following passage from a ${documentType} document. You should only extract entities and relations that are present in the specified passage, as interpreted within the context of the entire document..
+Analyze the following ${documentType} document.
 Extract key entities and relations. Use ONLY these entity types: ${ENTITY_TYPE_LIST}
 Use ONLY these relation types: ${RELATION_TYPE_LIST}
 
@@ -238,11 +237,7 @@ Relations:
 - <source_entity_name> <relation_type> <target_entity_name>: <description>
 - ...
 
-The entire document text is:
-
-${entireDocumentText}
-
-The specific section for you to consider in this task is:
+The document text is:
 
 ${text}
   `.trim();

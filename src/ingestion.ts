@@ -52,91 +52,85 @@ export async function ingestText(
     });
   }
 
-  const chunks = content.split(/\n\s*\n/);
   const createdEntitiesMap = new Map<string, number>();
 
-  for (const chunk of chunks) {
-    if (chunk.trim().length < 50) continue;
+  const { entities, relations } = await extractEntitiesAndRelations(
+    content,
+    documentType,
+    privacyLevel,
+  );
 
-    const { entities, relations } = await extractEntitiesAndRelations(
-      content,
-      chunk,
-      documentType,
-      privacyLevel,
-    );
+  for (const extractedEntity of entities) {
+    if (createdEntitiesMap.has(extractedEntity.name)) continue;
 
-    for (const extractedEntity of entities) {
-      if (createdEntitiesMap.has(extractedEntity.name)) continue;
+    // We search with "PRIVATE" (default) to find ANY existing entity with this name,
+    // regardless of its privacy level, because we want to merge/link to it.
+    const { resolvedEntities } = await findEntitiesByNames([
+      {
+        entityName: extractedEntity.name,
+        entityDescription: extractedEntity.description,
+      },
+    ]);
 
-      // We search with "PRIVATE" (default) to find ANY existing entity with this name,
-      // regardless of its privacy level, because we want to merge/link to it.
-      const { resolvedEntities } = await findEntitiesByNames([
-        {
-          entityName: extractedEntity.name,
-          entityDescription: extractedEntity.description,
-        },
-      ]);
+    if (resolvedEntities.length > 0 && resolvedEntities[0]) {
+      const existingEntity = resolvedEntities[0];
+      createdEntitiesMap.set(extractedEntity.name, existingEntity.id);
 
-      if (resolvedEntities.length > 0 && resolvedEntities[0]) {
-        const existingEntity = resolvedEntities[0];
-        createdEntitiesMap.set(extractedEntity.name, existingEntity.id);
+      // Privacy Upgrade Logic:
+      // If the new document is PRIVATE, and the existing entity is PUBLIC,
+      // we must upgrade the entity to PRIVATE.
+      if (
+        privacyLevel === "PRIVATE" &&
+        existingEntity.privacyLevel === "PUBLIC"
+      ) {
+        await updateEntity(existingEntity.id, { privacyLevel: "PRIVATE" });
+      }
+    } else {
+      const newEntity = await createEntity({
+        name: extractedEntity.name,
+        type: extractedEntity.type as unknown as EntityType,
+        description: extractedEntity.description,
+        sourceDocumentId: document.id,
+        metadata: {},
+        privacyLevel, // Init with document's privacy level
+      });
+      createdEntitiesMap.set(extractedEntity.name, newEntity.id);
+    }
+  }
 
-        // Privacy Upgrade Logic:
-        // If the new document is PRIVATE, and the existing entity is PUBLIC,
-        // we must upgrade the entity to PRIVATE.
+  for (const relation of relations) {
+    const sourceId = createdEntitiesMap.get(relation.source);
+    const targetId = createdEntitiesMap.get(relation.target);
+
+    if (sourceId && targetId) {
+      // Check if relation already exists
+      const existingRelation = await findRelation(
+        sourceId,
+        targetId,
+        relation.type as unknown as RelationType,
+      );
+
+      if (existingRelation) {
+        // Privacy Upgrade Logic for Relations
+        // If new doc is PRIVATE and existing relation is PUBLIC, upgrade to PRIVATE.
         if (
           privacyLevel === "PRIVATE" &&
-          existingEntity.privacyLevel === "PUBLIC"
+          existingRelation.privacyLevel === "PUBLIC"
         ) {
-          await updateEntity(existingEntity.id, { privacyLevel: "PRIVATE" });
-        }
-      } else {
-        const newEntity = await createEntity({
-          name: extractedEntity.name,
-          type: extractedEntity.type as unknown as EntityType,
-          description: extractedEntity.description,
-          sourceDocumentId: document.id,
-          metadata: {},
-          privacyLevel, // Init with document's privacy level
-        });
-        createdEntitiesMap.set(extractedEntity.name, newEntity.id);
-      }
-    }
-
-    for (const relation of relations) {
-      const sourceId = createdEntitiesMap.get(relation.source);
-      const targetId = createdEntitiesMap.get(relation.target);
-
-      if (sourceId && targetId) {
-        // Check if relation already exists
-        const existingRelation = await findRelation(
-          sourceId,
-          targetId,
-          relation.type as unknown as RelationType,
-        );
-
-        if (existingRelation) {
-          // Privacy Upgrade Logic for Relations
-          // If new doc is PRIVATE and existing relation is PUBLIC, upgrade to PRIVATE.
-          if (
-            privacyLevel === "PRIVATE" &&
-            existingRelation.privacyLevel === "PUBLIC"
-          ) {
-            await updateRelation(existingRelation.id, {
-              privacyLevel: "PRIVATE",
-            });
-          }
-        } else {
-          await createRelation({
-            sourceEntityId: sourceId,
-            targetEntityId: targetId,
-            type: relation.type as unknown as RelationType,
-            description: relation.description,
-            sourceDocumentId: document.id,
-            properties: {},
-            privacyLevel,
+          await updateRelation(existingRelation.id, {
+            privacyLevel: "PRIVATE",
           });
         }
+      } else {
+        await createRelation({
+          sourceEntityId: sourceId,
+          targetEntityId: targetId,
+          type: relation.type as unknown as RelationType,
+          description: relation.description,
+          sourceDocumentId: document.id,
+          properties: {},
+          privacyLevel,
+        });
       }
     }
   }
