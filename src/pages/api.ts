@@ -47,7 +47,7 @@ export async function uploadDocument(
 }
 
 export async function mergeNodes(): Promise<MergeResult> {
-  const res = await client.api["merge-nodes"].$post({});
+  const res = await client.api["merge"].$post({});
   if (!res.ok) throw new Error("Failed to merge nodes");
   return res.json();
 }

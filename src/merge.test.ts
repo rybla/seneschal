@@ -59,14 +59,14 @@ describe("Node Merging Workflow", () => {
     expect(winnerExists).toBeDefined();
   });
 
-  test("API: /api/merge-nodes should find and merge duplicates", async () => {
+  test("API: /api/merge should find and merge duplicates", async () => {
     // Create two very similar entities
     const name = `DuplicateEntity_${timestamp}`;
     const e1 = await createTestEntity(name, "PERSON");
     const e2 = await createTestEntity(name, "PERSON"); // Exact same name should match
 
     // helper to hit the API
-    const res = await client.api["merge-nodes"].$post();
+    const res = await client.api["merge"].$post();
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as {

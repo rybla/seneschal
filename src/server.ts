@@ -72,9 +72,9 @@ const routes = app
     },
   )
 
-  .on("POST", "/merge-nodes", async (c) => {
+  .on("POST", "/merge", async (c) => {
     try {
-      return c.json(await mergeNodes());
+      return c.json(await merge());
     } catch (error) {
       console.error("Merge error", error);
       return c.json({ error: `Merge failed: ${error}` }, 500);
@@ -108,7 +108,7 @@ const routes = app
       const { file, privacyLevel } = c.req.valid("form");
       try {
         const result = await ingestFile(file, privacyLevel);
-        await mergeNodes();
+        await merge();
         return c.json(result);
       } catch (error) {
         console.error("Ingest-and-merge error", error);
@@ -131,7 +131,7 @@ const routes = app
       const { file, privacyLevel, maxIterations } = c.req.valid("form");
       try {
         const result = await ingestFile(file, privacyLevel);
-        await mergeNodes();
+        await merge();
         await saturate(maxIterations);
         return c.json(result);
       } catch (error) {
@@ -256,7 +256,7 @@ async function ingestFile(file: File, privacyLevel: PrivacyLevel) {
   }
 }
 
-async function mergeNodes() {
+async function merge() {
   try {
     // 1. Fetch all entities
     const allEntities = await getAllEntities();
@@ -369,7 +369,7 @@ async function saturate(maxIterations: number) {
       }
     }
 
-    await mergeNodes();
+    await merge();
   }
 
   return {
