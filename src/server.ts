@@ -23,6 +23,7 @@ import { runMigrations } from "./db/migration";
 import { ingestText } from "./ingestion";
 import {
   generateLinkupQuery,
+  formatLinkupResult,
   type LinkupQueryStructuredResult,
 } from "./saturation";
 
@@ -192,9 +193,9 @@ const routes = app
 
           if (result) {
             await ingestText(
-              JSON.stringify(result, null, 2),
+              formatLinkupResult(entity, result),
               "SEARCH",
-              "PRIVATE",
+              "PUBLIC",
             );
             saturatedCount++;
           }

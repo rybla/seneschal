@@ -20,7 +20,7 @@ export const LinkupQueryStructuredResultSchema = (entity: SelectEntity) =>
               `The name of the other entity that is related to ${entity.name}`,
             ),
           otherEntityType: z
-            .enum(PrintedEntityTypes)
+            .enum(Object.values(PrintedEntityTypes) as [string, ...string[]])
             .describe(
               `The type of the other entity, which is ${PrintedEntityTypes[entity.type]}`,
             ),
@@ -44,7 +44,7 @@ export const LinkupQueryStructuredResultSchema = (entity: SelectEntity) =>
               `The name of the other entity that is related to ${entity.name}`,
             ),
           otherEntityType: z
-            .enum(PrintedEntityTypes)
+            .enum(Object.values(PrintedEntityTypes) as [string, ...string[]])
             .describe(
               `The type of the other entity, which is ${PrintedEntityTypes[entity.type]}`,
             ),
@@ -63,6 +63,41 @@ export const LinkupQueryStructuredResultSchema = (entity: SelectEntity) =>
 export type LinkupQueryStructuredResult = z.infer<
   Codomain<typeof LinkupQueryStructuredResultSchema>
 >;
+
+export function formatLinkupResult(
+  entity: SelectEntity,
+  result: LinkupQueryStructuredResult,
+): string {
+  const lines: string[] = [];
+  const entityType =
+    PrintedEntityTypes[entity.type as keyof typeof PrintedEntityTypes];
+
+  lines.push(`Found relations for ${entity.name} (${entityType}):`);
+
+  if (result.inRelations.length > 0) {
+    lines.push("\nIn-coming relations:");
+    for (const rel of result.inRelations) {
+      const relType = PrintedRelationTypes[rel.relationType];
+      lines.push(
+        `- ${rel.otherEntityName} (${rel.otherEntityType}) ${relType} ${entity.name}`,
+      );
+      lines.push(`  Evidence: ${rel.evidence}`);
+    }
+  }
+
+  if (result.outRelations.length > 0) {
+    lines.push("\nOut-going relations:");
+    for (const rel of result.outRelations) {
+      const relType = PrintedRelationTypes[rel.relationType];
+      lines.push(
+        `- ${entity.name} ${relType} ${rel.otherEntityName} (${rel.otherEntityType})`,
+      );
+      lines.push(`  Evidence: ${rel.evidence}`);
+    }
+  }
+
+  return lines.join("\n");
+}
 
 /**
  * Generates a Linkup query to search for the missing relations of an entity.
