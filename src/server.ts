@@ -153,7 +153,6 @@ const routes = app
         privacy_level: z.enum(PRIVACY_LEVELS),
       }),
     ),
-
     async (c) => {
       const { query, privacy_level } = c.req.valid("json");
 
