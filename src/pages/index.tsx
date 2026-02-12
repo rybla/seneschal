@@ -379,7 +379,17 @@ function SearchSection() {
       }
 
       ctx.arc(node.x ?? 0, node.y ?? 0, 6, 0, 2 * Math.PI, false);
-      ctx.fillStyle = isDimmed ? "#4b5563" : "#6366f1"; // Gray if dimmed, else primary
+
+      if (isDimmed) {
+        ctx.fillStyle = "#4b5563"; // Gray if dimmed
+      } else {
+        // Color based on privacy level
+        if (node.privacyLevel === "PUBLIC") {
+          ctx.fillStyle = "#ffffff"; // White for public
+        } else {
+          ctx.fillStyle = "#a855f7"; // Purple for private (using tailwind purple-500 equivalent)
+        }
+      }
 
       ctx.fill();
       ctx.restore();
@@ -392,10 +402,23 @@ function SearchSection() {
       if (newElements && newElements.edgeIds.has(link.id)) {
         return "#10b981"; // Emerald green for new edges
       }
-      if (!highlightedQuery) return "rgba(255, 255, 255, 0.3)";
-      return highlightedQuery.edgeIds.has(link.id)
-        ? "rgba(255, 255, 255, 0.8)" // Bright for highlighted
-        : "rgba(255, 255, 255, 0.05)"; // Dimmed for others
+
+      const isDimmed =
+        highlightedQuery && !highlightedQuery.edgeIds.has(link.id);
+
+      if (isDimmed) {
+        return "rgba(75, 85, 99, 0.2)"; // Dimmed gray
+      }
+
+      const isHighlighted =
+        highlightedQuery && highlightedQuery.edgeIds.has(link.id);
+      const alpha = isHighlighted ? 0.8 : 0.3;
+
+      if (link.privacyLevel === "PUBLIC") {
+        return `rgba(255, 255, 255, ${alpha})`;
+      } else {
+        return `rgba(168, 85, 247, ${alpha})`; // Purple
+      }
     },
     [highlightedQuery, newElements],
   );
