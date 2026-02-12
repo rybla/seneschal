@@ -9,11 +9,11 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Chosen Palette: Warm Neutrals & Semantic Accents -->
-    <!-- Background: Stone-50 (#fafaf9) to Stone-100 (#f5f5f4) -->
-    <!-- Text: Stone-800 (#292524) -->
-    <!-- Primary Brand/Action: Amber-600 (#d97706) -->
-    <!-- Functional: Emerald-600 (Private/Safe), Blue-600 (Public/Cloud) -->
+    <!-- Chosen Palette: Dark Mode / Cyber -->
+    <!-- Background: Zinc-950 (#09090b) to Zinc-900 (#18181b) -->
+    <!-- Text: Zinc-50 (#fafafa) to Zinc-400 (#a1a1aa) -->
+    <!-- Primary Brand/Action: Purple-600 (#9333ea) -->
+    <!-- Functional: Emerald-500 (Private), Blue-500 (Public) -->
 
     <!-- Application Structure Plan:
          1. Hero Section: Immediate Value Prop (Chief of Staff).
@@ -38,8 +38,8 @@
     <style>
       body {
         font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: #fafaf9; /* stone-50 */
-        color: #292524; /* stone-800 */
+        background-color: #09090b; /* zinc-950 */
+        color: #e4e4e7; /* zinc-200 */
       }
 
       .section-container {
@@ -49,7 +49,8 @@
       }
 
       .card {
-        background: white;
+        background: #18181b; /* zinc-900 */
+        border: 1px solid #27272a;
         border-radius: 0.75rem;
         box-shadow:
           0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -84,7 +85,7 @@
       }
 
       .btn-primary {
-        background-color: #d97706; /* amber-600 */
+        background-color: #9333ea; /* purple-600 */
         color: white;
         padding: 0.75rem 1.5rem;
         border-radius: 0.5rem;
@@ -94,13 +95,13 @@
         border: none;
       }
       .btn-primary:hover {
-        background-color: #b45309; /* amber-700 */
+        background-color: #7e22ce; /* purple-700 */
       }
 
       .btn-outline {
         background-color: transparent;
-        border: 2px solid #d97706;
-        color: #d97706;
+        border: 2px solid #a855f7; /* purple-500 */
+        color: #a855f7;
         padding: 0.75rem 1.5rem;
         border-radius: 0.5rem;
         font-weight: 600;
@@ -108,7 +109,7 @@
         cursor: pointer;
       }
       .btn-outline:hover {
-        background-color: #d97706;
+        background-color: #9333ea;
         color: white;
       }
 
@@ -117,14 +118,14 @@
         width: 8px;
       }
       .custom-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: #27272a;
       }
       .custom-scroll::-webkit-scrollbar-thumb {
-        background: #d6d3d1;
+        background: #52525b;
         border-radius: 4px;
       }
       .custom-scroll::-webkit-scrollbar-thumb:hover {
-        background: #a8a29e;
+        background: #71717a;
       }
 
       .step-indicator {
@@ -140,32 +141,32 @@
       }
     </style>
   </head>
-  <body class="antialiased selection:bg-amber-200 selection:text-amber-900">
+  <body class="antialiased selection:bg-purple-500 selection:text-white">
     <!-- Navigation -->
     <nav
-      class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200 shadow-sm"
+      class="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-zinc-800 shadow-sm"
     >
       <div
         class="max-width-container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl"
       >
         <div
-          class="text-2xl font-bold tracking-tight text-stone-800 flex items-center gap-2"
+          class="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
         >
-          <span>✦</span> Seneschal
+          <span class="text-purple-500">✦</span> Seneschal
         </div>
-        <div
-          class="hidden md:flex space-x-8 text-sm font-medium text-stone-600"
-        >
-          <a href="#problem" class="hover:text-amber-600 transition-colors"
+        <div class="hidden md:flex space-x-8 text-sm font-medium text-zinc-400">
+          <a href="#problem" class="hover:text-purple-400 transition-colors"
             >The Problem</a
           >
-          <a href="#architecture" class="hover:text-amber-600 transition-colors"
+          <a
+            href="#architecture"
+            class="hover:text-purple-400 transition-colors"
             >Core Architecture</a
           >
-          <a href="#process" class="hover:text-amber-600 transition-colors"
+          <a href="#process" class="hover:text-purple-400 transition-colors"
             >Recursive Engine</a
           >
-          <a href="#privacy" class="hover:text-amber-600 transition-colors"
+          <a href="#privacy" class="hover:text-purple-400 transition-colors"
             >Privacy</a
           >
         </div>
@@ -184,30 +185,30 @@
 
     <!-- Hero Section -->
     <header
-      class="relative overflow-hidden bg-stone-100 border-b border-stone-200"
+      class="relative overflow-hidden bg-zinc-950 border-b border-zinc-900"
     >
       <div class="section-container flex flex-col items-center text-center">
         <h1
-          class="text-4xl md:text-6xl font-extrabold text-stone-900 mb-6 leading-tight"
+          class="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight"
         >
           Seneschal
         </h1>
         <h1
-          class="text-4xl md:text-4xl font-extrabold text-stone-900 mb-6 leading-tight"
+          class="text-4xl md:text-4xl font-extrabold text-white mb-6 leading-tight"
         >
           Your Autonomous <br />
           <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-800"
+            class="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-purple-800"
             >Personal Chief of Staff</span
           >
         </h1>
         <div
-          class="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-amber-600 uppercase bg-amber-100 rounded-full"
+          class="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-purple-300 uppercase bg-purple-900/30 rounded-full border border-purple-800"
         >
           For Independent Contractors
         </div>
         <p
-          class="max-w-2xl text-lg md:text-xl text-stone-600 mb-10 leading-relaxed"
+          class="max-w-2xl text-lg md:text-xl text-zinc-400 mb-10 leading-relaxed"
         >
           Manage contracts, track constraints, and connect fragmented data.
           Seneschal is a centralized knowledge bank that maintains strict
@@ -233,13 +234,13 @@
     </header>
 
     <!-- Section 1: The Problem Space -->
-    <section id="problem" class="bg-white py-20">
+    <section id="problem" class="bg-black py-20 relative z-10">
       <div class="section-container">
         <div class="text-center mb-16">
-          <h2 class="text-3xl font-bold text-stone-800 mb-4">
+          <h2 class="text-3xl font-bold text-white mb-4">
             The Contractor's Dilemma
           </h2>
-          <p class="max-w-2xl mx-auto text-stone-600">
+          <p class="max-w-2xl mx-auto text-zinc-400">
             Independent work means managing your own infrastructure. Without a
             Chief of Staff, critical connections are lost in the noise.
           </p>
@@ -247,36 +248,32 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- Card 1 -->
-          <div class="card p-8 border-t-4 border-red-400">
+          <div class="card p-8 border-t-4 border-red-500">
             <div class="text-4xl mb-4">🕸️</div>
-            <h3 class="text-xl font-bold mb-3 text-stone-800">
+            <h3 class="text-xl font-bold mb-3 text-white">
               Complex Dependencies
             </h3>
-            <p class="text-stone-600 leading-relaxed">
+            <p class="text-zinc-400 leading-relaxed">
               Managing contracts isn't just about signing. It's about tracking
               overlapping constraints, deadlines, and multi-party relations that
               are hard to visualize.
             </p>
           </div>
           <!-- Card 2 -->
-          <div class="card p-8 border-t-4 border-amber-400">
+          <div class="card p-8 border-t-4 border-purple-500">
             <div class="text-4xl mb-4">🧩</div>
-            <h3 class="text-xl font-bold mb-3 text-stone-800">
-              Fragmented Data
-            </h3>
-            <p class="text-stone-600 leading-relaxed">
+            <h3 class="text-xl font-bold mb-3 text-white">Fragmented Data</h3>
+            <p class="text-zinc-400 leading-relaxed">
               Your "brain" is scattered: a PDF contract here, a Slack message
               there, an email thread somewhere else. No single source of truth
               exists.
             </p>
           </div>
           <!-- Card 3 -->
-          <div class="card p-8 border-t-4 border-stone-400">
+          <div class="card p-8 border-t-4 border-zinc-500">
             <div class="text-4xl mb-4">🔍</div>
-            <h3 class="text-xl font-bold mb-3 text-stone-800">
-              The Context Gap
-            </h3>
-            <p class="text-stone-600 leading-relaxed">
+            <h3 class="text-xl font-bold mb-3 text-white">The Context Gap</h3>
+            <p class="text-zinc-400 leading-relaxed">
               Traditional search keywords fail to connect private agreements
               with public knowledge. You miss the "why" and "how" behind your
               documents.
@@ -289,21 +286,21 @@
     <!-- Section 2: Architecture (Vector vs Graph) -->
     <section
       id="architecture"
-      class="bg-stone-50 py-20 border-y border-stone-200"
+      class="bg-zinc-950/50 py-20 border-y border-zinc-900"
     >
       <div class="section-container">
         <div class="flex flex-col lg:flex-row gap-12 items-center">
           <!-- Text Content -->
           <div class="lg:w-1/3">
-            <h2 class="text-3xl font-bold text-stone-800 mb-6">
+            <h2 class="text-3xl font-bold text-white mb-6">
               Beyond Simple Vectors: <br />The Knowledge Graph
             </h2>
-            <p class="text-stone-600 mb-6">
+            <p class="text-zinc-400 mb-6">
               Most AI assistants use <strong>Vector Databases</strong>, which
               only capture similarity (e.g., "Contract" is close to
               "Agreement").
             </p>
-            <p class="text-stone-600 mb-6">
+            <p class="text-zinc-400 mb-6">
               Seneschal uses a <strong>Structured Knowledge Graph</strong>. This
               captures higher-order relationships, allowing efficient traversal.
               A single "jump" in the graph can connect concepts that are
@@ -311,25 +308,25 @@
             </p>
             <div class="space-y-4">
               <div
-                class="p-4 bg-white rounded-lg shadow-sm border border-stone-200 cursor-pointer hover:bg-amber-50 transition-colors"
+                class="p-4 bg-zinc-900 rounded-lg shadow-sm border border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors"
                 onclick="updateGraphViz('vector')"
               >
-                <h4 class="font-bold text-stone-800">
+                <h4 class="font-bold text-zinc-200">
                   Option A: Vector Database
                 </h4>
-                <p class="text-sm text-stone-500">
+                <p class="text-sm text-zinc-500">
                   Points clustered by word similarity. No clear path from A to
                   B.
                 </p>
               </div>
               <div
-                class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-amber-500 cursor-pointer hover:bg-amber-50 transition-colors"
+                class="p-4 bg-zinc-900 rounded-lg shadow-sm border-l-4 border-purple-500 cursor-pointer hover:bg-zinc-800 transition-colors"
                 onclick="updateGraphViz('graph')"
               >
-                <h4 class="font-bold text-stone-800">
+                <h4 class="font-bold text-zinc-200">
                   Option B: Knowledge Graph
                 </h4>
-                <p class="text-sm text-stone-500">
+                <p class="text-sm text-zinc-500">
                   Explicit connections. "Client X" → signed → "NDA Y" → expires
                   → "Date Z".
                 </p>
@@ -338,26 +335,26 @@
           </div>
 
           <!-- Interactive Visualization -->
-          <div class="lg:w-2/3 w-full bg-white p-6 rounded-xl shadow-lg">
+          <div
+            class="lg:w-2/3 w-full bg-zinc-900 p-6 rounded-xl shadow-lg border border-zinc-800"
+          >
             <div class="flex justify-between items-center mb-4">
-              <h3 id="graphTitle" class="text-lg font-bold text-stone-700">
+              <h3 id="graphTitle" class="text-lg font-bold text-zinc-300">
                 Visualizing Data Relationships
               </h3>
-              <div class="text-sm text-stone-500">
+              <div class="text-sm text-zinc-500">
                 <span
-                  class="inline-block w-3 h-3 rounded-full bg-amber-500 mr-1"
+                  class="inline-block w-3 h-3 rounded-full bg-purple-500 mr-1"
                 ></span>
                 Entity
-                <span
-                  class="inline-block w-3 h-3 bg-stone-300 mr-1 ml-2"
-                ></span>
+                <span class="inline-block w-3 h-3 bg-zinc-600 mr-1 ml-2"></span>
                 Connection
               </div>
             </div>
             <div class="chart-container">
               <canvas id="architectureChart"></canvas>
             </div>
-            <p class="text-center text-sm text-stone-400 mt-4 italic">
+            <p class="text-center text-sm text-zinc-500 mt-4 italic">
               Switch views to see how Structure beats Similarity.
             </p>
           </div>
@@ -366,17 +363,17 @@
     </section>
 
     <!-- Section 3: The Recursive Fixpoint (The Engine) -->
-    <section id="process" class="bg-white py-20">
+    <section id="process" class="bg-black py-20">
       <div class="section-container">
         <div class="text-center mb-12">
           <span
-            class="text-amber-600 font-bold tracking-wider uppercase text-sm"
+            class="text-purple-500 font-bold tracking-wider uppercase text-sm"
             >The Engine</span
           >
-          <h2 class="text-3xl font-bold text-stone-800 mt-2">
+          <h2 class="text-3xl font-bold text-white mt-2">
             The Recursive Fixpoint
           </h2>
-          <p class="max-w-2xl mx-auto text-stone-600 mt-4">
+          <p class="max-w-2xl mx-auto text-zinc-400 mt-4">
             Seneschal doesn't just store data; it actively seeks to complete it.
             It cycles through detection, research, and ingestion until your
             knowledge base is saturated.
@@ -387,62 +384,60 @@
           <!-- Simulation Controls & feedback -->
           <div>
             <div class="space-y-8">
-              <div class="relative pl-8 border-l-2 border-stone-200">
+              <div class="relative pl-8 border-l-2 border-zinc-800">
                 <div
-                  class="step-indicator absolute -left-[21px] top-0 bg-stone-200 text-stone-600"
+                  class="step-indicator absolute -left-[21px] top-0 bg-zinc-800 text-zinc-400"
                   id="step-1-icon"
                 >
                   1
                 </div>
-                <h4 class="text-xl font-bold text-stone-800">
+                <h4 class="text-xl font-bold text-white">
                   Blind Spot Detection
                 </h4>
-                <p class="text-stone-600 mt-1">
+                <p class="text-zinc-400 mt-1">
                   Algorithm analyzes the graph for missing patterns (e.g., An
                   entity "Acme Corp" exists, but no industry or location data).
                 </p>
               </div>
 
-              <div class="relative pl-8 border-l-2 border-stone-200">
+              <div class="relative pl-8 border-l-2 border-zinc-800">
                 <div
-                  class="step-indicator absolute -left-[21px] top-0 bg-stone-200 text-stone-600"
+                  class="step-indicator absolute -left-[21px] top-0 bg-zinc-800 text-zinc-400"
                   id="step-2-icon"
                 >
                   2
                 </div>
-                <h4 class="text-xl font-bold text-stone-800">
+                <h4 class="text-xl font-bold text-white">
                   Link Up (External Search)
                 </h4>
-                <p class="text-stone-600 mt-1">
+                <p class="text-zinc-400 mt-1">
                   Queries public sources (News, Events, Press Releases) to fill
                   the identified gaps.
                 </p>
               </div>
 
-              <div class="relative pl-8 border-l-2 border-stone-200">
+              <div class="relative pl-8 border-l-2 border-zinc-800">
                 <div
-                  class="step-indicator absolute -left-[21px] top-0 bg-stone-200 text-stone-600"
+                  class="step-indicator absolute -left-[21px] top-0 bg-zinc-800 text-zinc-400"
                   id="step-3-icon"
                 >
                   3
                 </div>
-                <h4 class="text-xl font-bold text-stone-800">
+                <h4 class="text-xl font-bold text-white">
                   Recursive Integration
                 </h4>
-                <p class="text-stone-600 mt-1">
+                <p class="text-zinc-400 mt-1">
                   New data is ingested, creating new nodes. This might reveal
                   <em>new</em> blind spots, restarting the cycle.
                 </p>
               </div>
             </div>
 
-            <div
-              class="mt-8 p-4 bg-stone-50 rounded-lg border border-stone-200"
-            >
+            <div class="mt-8 p-4 bg-zinc-900 rounded-lg border border-zinc-800">
               <div class="flex justify-between items-center">
-                <span class="font-bold text-stone-700"
+                <span class="font-bold text-zinc-300"
                   >Status:
-                  <span id="simStatus" class="text-amber-600">Idle</span></span
+                  <span id="simStatus" class="text-purple-400">Idle</span></span
                 >
                 <button
                   id="startSimBtn"
@@ -453,7 +448,7 @@
               </div>
               <div
                 id="simLog"
-                class="mt-3 h-24 overflow-y-auto text-xs font-mono text-stone-500 custom-scroll p-2 bg-white rounded border border-stone-100"
+                class="mt-3 h-24 overflow-y-auto text-xs font-mono text-zinc-500 custom-scroll p-2 bg-black rounded border border-zinc-800"
               >
                 > System ready. Waiting for input...
               </div>
@@ -462,11 +457,11 @@
 
           <!-- Canvas Visualization of the Loop -->
           <div
-            class="bg-stone-900 rounded-xl p-4 shadow-2xl relative overflow-hidden flex items-center justify-center"
+            class="bg-zinc-950 rounded-xl p-4 shadow-2xl relative overflow-hidden flex items-center justify-center border border-zinc-900"
             style="height: 400px"
           >
             <canvas id="fixpointCanvas" width="500" height="350"></canvas>
-            <div class="absolute bottom-4 right-4 text-xs text-stone-400">
+            <div class="absolute bottom-4 right-4 text-xs text-zinc-600">
               Visualization: Recursive Knowledge Growth
             </div>
           </div>
@@ -475,13 +470,13 @@
     </section>
 
     <!-- Section 4: Privacy & Security -->
-    <section id="privacy" class="bg-stone-100 py-20 border-t border-stone-200">
+    <section id="privacy" class="bg-zinc-900/50 py-20 border-t border-zinc-900">
       <div class="section-container">
         <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-stone-800">
+          <h2 class="text-3xl font-bold text-white">
             Strict Privacy Boundaries
           </h2>
-          <p class="max-w-2xl mx-auto text-stone-600 mt-4">
+          <p class="max-w-2xl mx-auto text-zinc-400 mt-4">
             Your private documents never leave your local environment. Seneschal
             intelligently separates what must stay local from what can be
             augmented by the cloud.
@@ -490,15 +485,15 @@
 
         <!-- Privacy Interactive Sorter -->
         <div
-          class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto"
+          class="bg-zinc-900 rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto border border-zinc-800"
         >
           <div
-            class="p-6 border-b border-stone-200 bg-stone-50 flex justify-between items-center"
+            class="p-6 border-b border-zinc-800 bg-zinc-900 flex justify-between items-center"
           >
-            <h3 class="font-bold text-stone-700">
+            <h3 class="font-bold text-zinc-300">
               Data Classification Simulator
             </h3>
-            <p class="text-sm text-stone-500">
+            <p class="text-sm text-zinc-500">
               Click a document to classify it.
             </p>
           </div>
@@ -506,7 +501,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 h-96">
             <!-- Local Zone -->
             <div
-              class="bg-emerald-50/50 p-6 border-r border-stone-100 relative group"
+              class="bg-emerald-950/20 p-6 border-r border-zinc-800 relative group"
             >
               <div
                 class="absolute top-4 left-4 text-emerald-700 font-bold flex items-center gap-2"
@@ -526,7 +521,7 @@
             </div>
 
             <!-- Cloud Zone -->
-            <div class="bg-blue-50/50 p-6 relative group">
+            <div class="bg-blue-950/20 p-6 relative group">
               <div
                 class="absolute top-4 right-4 text-blue-700 font-bold flex items-center gap-2"
               >
@@ -546,8 +541,8 @@
           </div>
 
           <!-- Document Pool -->
-          <div class="p-6 bg-stone-800 text-center">
-            <p class="text-stone-300 text-sm mb-4">
+          <div class="p-6 bg-zinc-950 text-center border-t border-zinc-800">
+            <p class="text-zinc-500 text-sm mb-4">
               Pending Documents (Click to Process):
             </p>
             <div id="docPool" class="flex flex-wrap justify-center gap-3">
@@ -559,42 +554,42 @@
     </section>
 
     <!-- Section 5: Ingestion Support -->
-    <section class="py-20 bg-white">
+    <section class="py-20 bg-black">
       <div class="section-container">
-        <h2 class="text-2xl font-bold text-stone-800 mb-8 text-center">
+        <h2 class="text-2xl font-bold text-white mb-8 text-center">
           Intelligent Ingestion & Context
         </h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div
-            class="p-4 border rounded hover:border-amber-500 transition-colors"
+            class="p-4 border border-zinc-800 rounded hover:border-purple-500 transition-colors"
           >
             <div class="text-2xl mb-2">📄</div>
-            <div class="font-bold text-stone-700">Contracts</div>
+            <div class="font-bold text-zinc-300">Contracts</div>
           </div>
           <div
-            class="p-4 border rounded hover:border-amber-500 transition-colors"
+            class="p-4 border border-zinc-800 rounded hover:border-purple-500 transition-colors"
           >
             <div class="text-2xl mb-2">💰</div>
-            <div class="font-bold text-stone-700">Invoices</div>
+            <div class="font-bold text-zinc-300">Invoices</div>
           </div>
           <div
-            class="p-4 border rounded hover:border-amber-500 transition-colors"
+            class="p-4 border border-zinc-800 rounded hover:border-purple-500 transition-colors"
           >
             <div class="text-2xl mb-2">📧</div>
-            <div class="font-bold text-stone-700">Emails</div>
+            <div class="font-bold text-zinc-300">Emails</div>
           </div>
           <div
-            class="p-4 border rounded hover:border-amber-500 transition-colors"
+            class="p-4 border border-zinc-800 rounded hover:border-purple-500 transition-colors"
           >
             <div class="text-2xl mb-2">💬</div>
-            <div class="font-bold text-stone-700">Slack Msgs</div>
+            <div class="font-bold text-zinc-300">Slack Msgs</div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-stone-900 text-stone-400 py-12">
+    <footer class="bg-zinc-950 text-zinc-500 py-12 border-t border-zinc-900">
       <div class="section-container text-center">
         <h2 class="text-2xl font-bold text-white mb-4">Seneschal</h2>
         <p class="max-w-md mx-auto mb-8">
@@ -638,7 +633,7 @@
             {
               label: "Data Entities",
               data: dataPoints.map((p) => ({ x: p.x, y: p.y, r: 8 })),
-              backgroundColor: "#d97706", // amber-600
+              backgroundColor: "#a855f7", // purple-500
               borderColor: "#fff",
               borderWidth: 2,
             },
@@ -672,7 +667,7 @@
                 const meta = chart.getDatasetMeta(0);
 
                 ctx.save();
-                ctx.strokeStyle = "rgba(41, 37, 36, 0.2)"; // stone-800 low opacity
+                ctx.strokeStyle = "rgba(161, 161, 170, 0.2)"; // zinc-400 low opacity
                 ctx.lineWidth = 2;
 
                 // Define connections (indices)
@@ -750,13 +745,13 @@
 
       function drawSim() {
         // Clear
-        fixCtx.fillStyle = "#1c1917"; // stone-900
+        fixCtx.fillStyle = "#18181b"; // zinc-900
         fixCtx.fillRect(0, 0, fixCanvas.width, fixCanvas.height);
 
         // Draw Rays (Search)
         simState.rays.forEach((ray, index) => {
           fixCtx.beginPath();
-          fixCtx.strokeStyle = `rgba(217, 119, 6, ${ray.opacity})`;
+          fixCtx.strokeStyle = `rgba(168, 85, 247, ${ray.opacity})`;
           fixCtx.lineWidth = 2;
           fixCtx.moveTo(ray.sx, ray.sy);
           fixCtx.lineTo(ray.ex, ray.ey);
@@ -774,7 +769,7 @@
         simState.nodes.forEach((node) => {
           fixCtx.beginPath();
           fixCtx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-          fixCtx.fillStyle = node.type === "core" ? "#d97706" : "#fff";
+          fixCtx.fillStyle = node.type === "core" ? "#a855f7" : "#fff";
           fixCtx.fill();
 
           // Draw connections to core
@@ -817,11 +812,11 @@
       function highlightStep(stepNum) {
         stepIcons.forEach((icon, idx) => {
           if (idx + 1 === stepNum) {
-            icon.classList.remove("bg-stone-200", "text-stone-600");
-            icon.classList.add("bg-amber-600", "text-white", "scale-110");
+            icon.classList.remove("bg-zinc-800", "text-zinc-400");
+            icon.classList.add("bg-purple-600", "text-white", "scale-110");
           } else {
-            icon.classList.add("bg-stone-200", "text-stone-600");
-            icon.classList.remove("bg-amber-600", "text-white", "scale-110");
+            icon.classList.add("bg-zinc-800", "text-zinc-400");
+            icon.classList.remove("bg-purple-600", "text-white", "scale-110");
           }
         });
       }
@@ -890,7 +885,10 @@
               simState.activeStep = 0;
               simState.running = false;
               simStatus.innerText = "Saturated (Fixpoint Reached)";
-              simStatus.classList.replace("text-amber-600", "text-emerald-600");
+              simStatus.classList.replace(
+                "text-purple-400",
+                "text-emerald-500",
+              );
               log("No further gaps detected. Fixpoint reached.");
               highlightStep(0);
             }
@@ -917,7 +915,7 @@
         docs.forEach((doc) => {
           const btn = document.createElement("button");
           btn.className =
-            "bg-stone-700 hover:bg-stone-600 text-white px-3 py-2 rounded text-xs transition-transform transform hover:scale-105 shadow-md flex items-center gap-2";
+            "bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded text-xs transition-transform transform hover:scale-105 shadow-md flex items-center gap-2";
           btn.innerHTML = `${doc.emoji} ${doc.name}`;
           btn.onclick = () => sortDoc(doc, btn);
           docPool.appendChild(btn);
@@ -934,13 +932,13 @@
 
         if (doc.type === "private") {
           tag.classList.add(
-            "bg-white",
-            "text-emerald-700",
-            "border-emerald-200",
+            "bg-zinc-950",
+            "text-emerald-500",
+            "border-emerald-800",
           );
           localZone.appendChild(tag);
         } else {
-          tag.classList.add("bg-white", "text-blue-700", "border-blue-200");
+          tag.classList.add("bg-zinc-950", "text-blue-500", "border-blue-800");
           cloudZone.appendChild(tag);
         }
       }
@@ -974,8 +972,8 @@
 
       function animateHero() {
         hCtx.clearRect(0, 0, width, height);
-        hCtx.fillStyle = "#d97706";
-        hCtx.strokeStyle = "#d6d3d1"; // stone-300
+        hCtx.fillStyle = "#a855f7";
+        hCtx.strokeStyle = "#52525b"; // zinc-600
 
         hNodes.forEach((node, i) => {
           node.x += node.vx;
