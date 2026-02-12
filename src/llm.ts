@@ -346,17 +346,15 @@ export async function synthesizeAnswerFromGraph(
     `;
 
   const prompt = `
-Based on the following knowledge graph context, provide a concise, natural language answer to the user's query.
+Using the knowledge graph data as helpful context, write a natural language answer to the user's query.
 Synthesize the information from the nodes and edges into a coherent response.
 Do not return the graph data, only the answer.
-
-User Query: "${query}"
 
 Knowledge Graph Context:
 ${contextStr}
 
-Answer:
-    `;
+User Query: "${query}"
+`.trim();
 
   try {
     const text = await generateText(prompt, privacyLevel);

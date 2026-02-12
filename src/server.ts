@@ -119,7 +119,7 @@ const routes = app
       const { file, privacyLevel } = c.req.valid("form");
       try {
         const result = await ingestFile(file, privacyLevel);
-        await merge();
+        // await merge();
         return c.json(result);
       } catch (error) {
         console.error("Ingest-and-merge error", error);
@@ -135,14 +135,14 @@ const routes = app
       z.object({
         file: z.instanceof(File),
         privacyLevel: z.enum(PRIVACY_LEVELS),
-        maxIterations: z.int(),
+        maxIterations: z.coerce.number().int(),
       }),
     ),
     async (c) => {
       const { file, privacyLevel, maxIterations } = c.req.valid("form");
       try {
         const result = await ingestFile(file, privacyLevel);
-        await merge();
+        // await merge();
         await saturate(maxIterations);
         return c.json(result);
       } catch (error) {
@@ -458,7 +458,7 @@ async function saturate(maxIterations: number) {
       }
     }
 
-    await merge();
+    // await merge();
   }
 
   return {
