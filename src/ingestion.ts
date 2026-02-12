@@ -59,6 +59,7 @@ export async function ingestText(
     if (chunk.trim().length < 50) continue;
 
     const { entities, relations } = await extractEntitiesAndRelations(
+      content,
       chunk,
       documentType,
       privacyLevel,
